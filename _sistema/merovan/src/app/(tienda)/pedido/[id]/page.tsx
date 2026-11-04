@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eur } from "@/lib/format";
+import { confirmReturnedSession } from "@/lib/payments";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Tu pedido" };
@@ -8,13 +9,16 @@ export const dynamic = "force-dynamic";
 
 const UUID = /^[0-9a-f-]{36}$/;
 
-export default async function OrderPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ pagado?: string }> }) {
+export default async function OrderPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ pagado?: string; session_id?: string }> }) {
   const { id } = await params;
-  const { pagado } = await searchParams;
+  const { pagado, session_id } = await searchParams;
   if (!UUID.test(id)) notFound();
   const supabase = await createClient();
-  const { data: lines } = await supabase.rpc("order_lines", { p_order: id });
+  let { data: lines } = await supabase.rpc("order_lines", { p_order: id });
   if (!lines?.length) notFound();
+  if (lines[0].status === "pendiente_pago" && session_id && (await confirmReturnedSession(session_id, id))) {
+    ({ data: lines } = await supabase.rpc("order_lines", { p_order: id }));
+  }
   const o = lines[0];
   const paid = o.status !== "pendiente_pago";
 

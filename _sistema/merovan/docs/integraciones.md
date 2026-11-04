@@ -15,7 +15,9 @@ Los valores de plataformas (comisiones, plazos) están en *Ajustes* con su fecha
 ## Stripe paso a paso (modo prueba)
 1. Crea la cuenta en stripe.com y quédate en **modo prueba**.
 2. Copia la clave secreta `sk_test_…` en `STRIPE_SECRET_KEY` (en el archivo, no en el chat).
-3. Webhook local: instala Stripe CLI y ejecuta `stripe listen --forward-to localhost:5190/api/stripe/webhook`; copia el `whsec_…` a `STRIPE_WEBHOOK_SECRET`.
+3. En local **no hace falta webhook**: al volver del pago, la página del pedido pregunta a Stripe (con la clave secreta) si la sesión
+   está pagada y solo entonces marca el pedido. Opcional: Stripe CLI y `stripe listen --forward-to localhost:5190/api/stripe/webhook`
+   (en esta red github.com está bloqueado, así que la CLI no se puede descargar).
 4. Compra de prueba con la tarjeta `4242 4242 4242 4242`: el pedido debe pasar a «pagado» y bajar el stock.
 5. En producción: webhook a `https://<dominio>/api/stripe/webhook` con los eventos `checkout.session.completed` y `checkout.session.async_payment_succeeded`.
 

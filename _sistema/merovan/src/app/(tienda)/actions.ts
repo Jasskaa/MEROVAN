@@ -63,7 +63,7 @@ export async function checkout() {
     ],
     shipping_address_collection: { allowed_countries: ["ES"] },
     phone_number_collection: { enabled: true },
-    success_url: `${origin}/pedido/${orderId}?pagado=1`,
+    success_url: `${origin}/pedido/${orderId}?pagado=1&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/carrito`,
   });
   redirect(session.url!);
