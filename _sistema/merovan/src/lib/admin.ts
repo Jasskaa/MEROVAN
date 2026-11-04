@@ -29,8 +29,10 @@ export function serviceClient() {
 
 type SettingsMap = Record<string, unknown>;
 
-export async function loadSettings(): Promise<SettingsMap> {
-  const supabase = await createClient();
+type Client = Awaited<ReturnType<typeof createClient>> | NonNullable<ReturnType<typeof serviceClient>>;
+
+export async function loadSettings(client?: Client): Promise<SettingsMap> {
+  const supabase = client ?? (await createClient());
   const { data } = await supabase.from("settings").select("key, value");
   return Object.fromEntries((data ?? []).map((s) => [s.key, s.value]));
 }

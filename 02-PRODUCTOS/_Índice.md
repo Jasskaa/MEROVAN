@@ -34,3 +34,11 @@ views:
 ```
 
 ← [[Home]]
+
+## Generado por la app
+<!-- merovan:auto:start -->
+| Producto | Estado |
+|---|---|
+| [[PRD-0001 Organizador de cables (EJEMPLO)]] | En test |
+| [[PRD-0002 Lámpara de lectura recargable]] | Candidato |
+<!-- merovan:auto:end -->

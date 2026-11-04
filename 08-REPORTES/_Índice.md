@@ -32,3 +32,9 @@ views:
 ```
 
 ← [[Home]]
+
+## Generado por la app
+<!-- merovan:auto:start -->
+- [[REP-2026-S45|REP-2026-S45]]
+- [[_Índice|IDX-08]]
+<!-- merovan:auto:end -->

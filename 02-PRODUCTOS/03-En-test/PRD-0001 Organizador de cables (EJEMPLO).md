@@ -5,15 +5,15 @@ estado: en-test
 responsable: producto
 creado: 2026-11-04
 actualizado: 2026-11-04
-tags: [ejemplo, producto/estado/en-test, canal/web, canal/tiktok-shop]
+tags: [ejemplo, canal/web, canal/tiktok-shop, producto/estado/en-test, decision/matar]
 nicho: hogar-oficina
 canal: [web, tiktok-shop]
 puntuacion: 31
-margen_contribucion: 7.12
-roas_equilibrio: 2.32
+margen_contribucion: 7.57
+roas_equilibrio: 2.18
 proveedor_principal: PRV-0001
-decision: esperar
-motivo_decision: Gasto de test por debajo del mínimo (3 pedidos)
+decision: matar
+motivo_decision: Tope de gasto superado
 ---
 
 # PRD-0001 Organizador de cables (EJEMPLO)
@@ -72,3 +72,26 @@ Escritorios desordenados: el beneficio se ve en 2 segundos (antes/después). Ide
 | 04/11/2026 | esperar | Pocos datos | producto |
 
 ## Aprendizajes
+
+## Datos de la app
+<!-- merovan:auto:start -->
+_Actualizado desde la app. No escribas dentro de esta zona: se regenera en cada exportación._
+
+| Dato | Valor |
+|---|---|
+| Estado | En test |
+| Tienda | publicado |
+| Precio | 19,95 € |
+| Margen de contribución | 7,57 € |
+| ROAS de equilibrio / objetivo | 2,18 / 3,05 |
+| Gasto en anuncios (total) | 117,00 € |
+| ROAS anuncios | 1,13 |
+| Compras atribuidas | 8 |
+| Recomendación | MATAR (pendiente, confianza media) |
+
+### Historial de estados
+| Fecha | De | A | Motivo |
+|---|---|---|---|
+
+Creatividades: CRE-0001, CRE-0002 · Ficha en la app: /admin/productos/PRD-0001
+<!-- merovan:auto:end -->

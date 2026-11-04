@@ -1,14 +1,14 @@
 import "server-only";
-import { loadSettings, marginDefaults } from "@/lib/admin";
+import { loadSettings, marginDefaults, serviceClient } from "@/lib/admin";
 import { DEFAULT_RULES, type DecisionInput, type DecisionRules, decide } from "@/lib/domain/decision";
 import { computeMargin } from "@/lib/domain/margin";
 import { createClient } from "@/lib/supabase/server";
 
-type Supabase = Awaited<ReturnType<typeof createClient>>;
+type Supabase = Awaited<ReturnType<typeof createClient>> | NonNullable<ReturnType<typeof serviceClient>>;
 
 /** Gathers each product's test data, runs the engine and stores one pending recommendation per product. */
 export async function runDecisionEngine(supabase: Supabase) {
-  const settings = await loadSettings();
+  const settings = await loadSettings(supabase);
   const rules: DecisionRules = { ...DEFAULT_RULES, ...((settings.decision_rules as Partial<DecisionRules>) ?? {}) };
   const windowDays = Number(settings.decision_window_days ?? 14);
   const vatRate = Number(settings.vat_default ?? 0.21);

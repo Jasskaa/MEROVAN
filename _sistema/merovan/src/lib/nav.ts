@@ -16,6 +16,7 @@ export const ADMIN_NAV: { href: string; label: string; roles: Role[] | "all" }[]
   { href: "/admin/aprobaciones", label: "Aprobaciones", roles: "all" },
   { href: "/admin/ajustes", label: "Ajustes", roles: ["owner", "finanzas"] },
   { href: "/admin/equipo", label: "Equipo", roles: ["owner"] },
+  { href: "/admin/sistema", label: "Sistema", roles: ["owner", "producto", "finanzas", "operaciones"] },
   { href: "/admin/cuenta", label: "Mi cuenta", roles: "all" },
 ];
 
