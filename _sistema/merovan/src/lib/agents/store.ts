@@ -1,6 +1,7 @@
 // Data port for the agent system. The runtime and tools only talk to this interface, so the
 // same code runs against Supabase (production) and an in-memory store (tests and evaluations).
 import type { Guardrails, Usage } from "./policy";
+import type { MarginDefaults } from "./research";
 
 export interface ProposalRow {
   id: string;
@@ -22,6 +23,16 @@ export interface ProposalRow {
 }
 
 export interface ProductSummary { code: string; name: string; status: string; publish_status: string; price_cents: number | null }
+
+export interface NicheInput { name: string; thesis: string; audience: string; evidence: string[]; risks: string[]; confidence: "baja" | "media" | "alta"; demo: boolean; agent: string; runId: string | null }
+export interface CandidateRow {
+  id: string; niche_id: string; name: string; description: string; scores: Record<string, number>; score_total: number; passes: boolean;
+  score_reasons: string[]; supplier_plan: unknown; landed_cents: number | null; price_cents: number | null; margin_pct: number | null;
+  margin_cents: number | null; break_even_roas: number | null; price_reasons: string[]; real_data: boolean; status: string; demo: boolean; product_id?: string | null;
+}
+export interface SupplierOfferView { product: string; supplier: string; warehouse_country: string | null; role: string; unit_cost_cents: number; shipping_cents: number; promised_days: number | null; measured_days: number | null; reliability: number | null }
+export type NewCandidate = Pick<CandidateRow, "niche_id" | "name" | "description" | "scores" | "score_total" | "passes" | "score_reasons" | "demo">;
+export interface ResearchNiche { id: string; name: string; thesis: string; confidence: string; status: string; candidates: CandidateRow[] }
 
 export interface AgentStore {
   getState(): Promise<{ killSwitch: boolean; dryRun: boolean }>;
@@ -50,7 +61,19 @@ export interface AgentStore {
   listProducts(): Promise<ProductSummary[]>;
   getProduct(code: string): Promise<Record<string, unknown> | null>;
   createProductDraft(p: { name: string; description?: string; price_cents?: number }): Promise<string>;
+
+  marginDefaults(): Promise<MarginDefaults>;
+  createNiche(n: NicheInput): Promise<string>;
+  addCandidate(c: NewCandidate): Promise<string>;
+  getCandidate(id: string): Promise<CandidateRow | null>;
+  updateCandidate(id: string, patch: Partial<CandidateRow>): Promise<void>;
+  listResearch(): Promise<ResearchNiche[]>;
+  listSupplierOffers(): Promise<SupplierOfferView[]>;
 }
+
+export const DEFAULT_MARGIN: MarginDefaults = {
+  vatRate: 0.21, platformCommissionPct: 0, paymentFeePct: 0.014, paymentFeeFixed: 0.25, returnsProvisionPct: 0.06, otherCosts: 0, targetRoasFactor: 1.4, testBudgetMultiplier: 4,
+};
 
 /** In-memory implementation used by tests and evaluations. */
 export class MemoryStore implements AgentStore {
@@ -67,6 +90,9 @@ export class MemoryStore implements AgentStore {
   memory: { scope: string; key: string; content: string }[] = [];
   products: (ProductSummary & Record<string, unknown>)[] = [];
   killEvents: { on: boolean; reason: string; automatic: boolean }[] = [];
+  niches: Omit<ResearchNiche, "candidates">[] = [];
+  candidates: CandidateRow[] = [];
+  offers: SupplierOfferView[] = [];
   refunds = 0;
   private seq = 0;
   private id = (p: string) => `${p}-${++this.seq}`;
@@ -134,4 +160,17 @@ export class MemoryStore implements AgentStore {
     this.products.push({ code, name: p.name, status: "idea", publish_status: "borrador", price_cents: p.price_cents ?? null, description: p.description ?? "" });
     return code;
   }
+
+  async marginDefaults() { return { ...DEFAULT_MARGIN }; }
+  async createNiche(n: NicheInput) { const id = this.id("niche"); this.niches.push({ id, name: n.name, thesis: n.thesis, confidence: n.confidence, status: "propuesto" }); return id; }
+  async addCandidate(c: NewCandidate) {
+    if (!this.niches.some((n) => n.id === c.niche_id)) throw new Error("Nicho no encontrado");
+    const id = this.id("cand");
+    this.candidates.push({ ...c, id, supplier_plan: null, landed_cents: null, price_cents: null, margin_pct: null, margin_cents: null, break_even_roas: null, price_reasons: [], real_data: false, status: "propuesto" });
+    return id;
+  }
+  async getCandidate(id: string) { return this.candidates.find((c) => c.id === id) ?? null; }
+  async updateCandidate(id: string, patch: Partial<CandidateRow>) { const c = this.candidates.find((x) => x.id === id); if (c) Object.assign(c, patch); }
+  async listResearch() { return this.niches.map((n) => ({ ...n, candidates: this.candidates.filter((c) => c.niche_id === n.id) })); }
+  async listSupplierOffers() { return [...this.offers]; }
 }

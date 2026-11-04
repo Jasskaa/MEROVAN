@@ -2,11 +2,13 @@
 // Tools never decide on autonomy: anything that acts goes through propose() and the policy engine.
 import { z } from "zod";
 import { ACTION_TYPES } from "./policy";
+import { CRITERIA } from "@/lib/domain/product";
 import { propose } from "./pipeline";
+import { type Offer, rankOffers, recommendPrice, scoreCandidate } from "./research";
 import type { AgentStore } from "./store";
 import type { Tool } from "./model";
 
-export interface ToolContext { store: AgentStore; agent: string; runId: string | null; taskId: string | null }
+export interface ToolContext { store: AgentStore; agent: string; runId: string | null; taskId: string | null; demo?: boolean }
 
 interface AgentTool<S extends z.ZodTypeAny = z.ZodTypeAny> {
   name: string;
@@ -132,6 +134,114 @@ export const TOOLS: AgentTool[] = [
       const motivos = [...(p.compliance?.motivos ?? []), ...i.motivos];
       await store.updateProposal(p.id, { compliance: { veredicto: i.veredicto, motivos, revisor: "agente_cumplimiento" }, ...(i.veredicto === "vetado" && p.status === "pendiente" ? { status: "vetada" } : {}) });
       return { ok: true };
+    },
+  },
+  {
+    name: "registrar_nicho",
+    description: "Investigador: guarda un nicho propuesto con su tesis, público, señales (indica de dónde sale cada una) y riesgos. Devuelve su id.",
+    schema: z.object({
+      name: z.string().min(3).max(80), thesis: z.string().min(10).max(600), audience: z.string().max(300),
+      evidence: z.array(z.string().max(300)).min(1).max(10), risks: z.array(z.string().max(300)).max(10), confidence: z.enum(["baja", "media", "alta"]),
+    }),
+    jsonSchema: obj({
+      name: { type: "string" }, thesis: { type: "string" }, audience: { type: "string" },
+      evidence: { type: "array", items: { type: "string" }, description: "Cada señal con su fuente (Google Trends, TikTok Creative Center, catálogo…) o «hipótesis sin verificar»" },
+      risks: { type: "array", items: { type: "string" } }, confidence: { type: "string", enum: ["baja", "media", "alta"] },
+    }, ["name", "thesis", "audience", "evidence", "risks", "confidence"]),
+    run: async ({ store, agent, runId, demo }, i) => ({ niche_id: await store.createNiche({ ...i, demo: Boolean(demo), agent, runId }) }),
+  },
+  {
+    name: "guardar_candidato",
+    description: "Investigador: añade un producto candidato a un nicho con notas 0-5 por criterio. El sistema calcula la puntuación /40 y si pasa el umbral (28) y el mínimo legal (3).",
+    schema: z.object({
+      niche_id: z.string(), name: z.string().min(3).max(100), description: z.string().max(600),
+      scores: z.object(Object.fromEntries(CRITERIA.map((c) => [c.key, z.number().int().min(0).max(5)]))),
+    }),
+    jsonSchema: obj({
+      niche_id: { type: "string" }, name: { type: "string" }, description: { type: "string" },
+      scores: obj(Object.fromEntries(CRITERIA.map((c) => [c.key, { type: "integer", minimum: 0, maximum: 5, description: c.hint }])), CRITERIA.map((c) => c.key)),
+    }, ["niche_id", "name", "description", "scores"]),
+    run: async ({ store, demo }, i) => {
+      const scores = i.scores as Record<string, number>;
+      const s = scoreCandidate(scores);
+      const id = await store.addCandidate({ niche_id: i.niche_id, name: i.name, description: i.description, scores, ...s, demo: Boolean(demo) });
+      return { candidate_id: id, ...s };
+    },
+  },
+  {
+    name: "ver_investigacion",
+    description: "Nichos abiertos con sus candidatos: puntuación, plan de proveedor, coste puesto en destino, precio y margen calculados.",
+    schema: z.object({}),
+    jsonSchema: obj({}),
+    externalData: true,
+    run: async ({ store }) => (await store.listResearch()).map((n) => ({
+      ...n,
+      candidates: n.candidates.map(({ id, name, score_total, passes, landed_cents, price_cents, margin_pct, real_data, status, supplier_plan }) => ({
+        id, name, score_total, passes, landed_cents, price_cents, margin_pct, real_data, status,
+        principal: (supplier_plan as { principal?: { supplier: string } } | null)?.principal?.supplier ?? null,
+        respaldo: (supplier_plan as { respaldo?: { supplier: string } } | null)?.respaldo?.supplier ?? null,
+      })),
+    })),
+  },
+  {
+    name: "ofertas_registradas",
+    description: "Proveedores: ofertas ya registradas en el panel (proveedor, almacén, coste, envío, plazos prometidos y medidos).",
+    schema: z.object({}),
+    jsonSchema: obj({}),
+    externalData: true,
+    run: ({ store }) => store.listSupplierOffers(),
+  },
+  {
+    name: "guardar_plan_proveedor",
+    description:
+      "Proveedores: compara 1-5 ofertas de un candidato y guarda el plan. El sistema ordena (almacén UE primero, coste puesto, plazo, fiabilidad) y elige principal y respaldo. " +
+      "Indica en source la URL o catálogo oficial de cada cifra; si es una estimación escribe «estimacion».",
+    schema: z.object({
+      candidate_id: z.string(),
+      offers: z.array(z.object({
+        supplier: z.string().min(2).max(80), warehouse_country: z.string().length(2), unit_cost_cents: z.number().int().min(1).max(1_000_000),
+        shipping_cents: z.number().int().min(0).max(100_000), promised_days: z.number().int().min(1).max(90), reliability: z.number().min(0).max(1).optional(), source: z.string().min(3).max(300),
+      })).min(1).max(5),
+    }),
+    jsonSchema: obj({
+      candidate_id: { type: "string" },
+      offers: { type: "array", items: obj({
+        supplier: { type: "string" }, warehouse_country: { type: "string", description: "Código ISO del almacén, p. ej. ES, DE, CN" },
+        unit_cost_cents: { type: "integer" }, shipping_cents: { type: "integer" }, promised_days: { type: "integer" },
+        reliability: { type: "number", description: "0-1 solo si hay historial o muestra" }, source: { type: "string" },
+      }, ["supplier", "warehouse_country", "unit_cost_cents", "shipping_cents", "promised_days", "source"]) },
+    }, ["candidate_id", "offers"]),
+    run: async ({ store }, i) => {
+      const c = await store.getCandidate(i.candidate_id);
+      if (!c) throw new Error("Candidato no encontrado");
+      const plan = rankOffers(i.offers as Offer[]);
+      await store.updateCandidate(c.id, { supplier_plan: plan, landed_cents: plan.principal?.landed_cents ?? null, real_data: plan.real_data, price_cents: null, margin_pct: null, margin_cents: null });
+      return { principal: plan.principal?.supplier ?? null, respaldo: plan.respaldo?.supplier ?? null, landed_cents: plan.principal?.landed_cents ?? null, avisos: plan.warnings };
+    },
+  },
+  {
+    name: "calcular_precio",
+    description: "Precios: calcula, sin guardar, el precio x,95 € más bajo dentro del rango de Límites que alcanza el margen mínimo, para un coste puesto en destino (céntimos, sin IVA).",
+    schema: z.object({ landed_cents: z.number().int().min(1).max(1_000_000) }),
+    jsonSchema: obj({ landed_cents: { type: "integer" } }, ["landed_cents"]),
+    run: async ({ store }, i) => {
+      const [g, d] = await Promise.all([store.getGuardrails(), store.marginDefaults()]);
+      return recommendPrice(i.landed_cents, d, { minMarginPct: g.min_margin_pct ?? 25, priceMinCents: g.price_min_cents ?? 0, priceMaxCents: g.price_max_cents ?? 0 });
+    },
+  },
+  {
+    name: "guardar_precio",
+    description: "Precios: fija el precio recomendado de un candidato a partir de su plan de proveedor. El sistema calcula el margen; si no llega al mínimo, no guarda precio y explica por qué.",
+    schema: z.object({ candidate_id: z.string() }),
+    jsonSchema: obj({ candidate_id: { type: "string" } }, ["candidate_id"]),
+    run: async ({ store }, i) => {
+      const c = await store.getCandidate(i.candidate_id);
+      if (!c) throw new Error("Candidato no encontrado");
+      if (!c.landed_cents) throw new Error("El candidato aún no tiene plan de proveedor");
+      const [g, d] = await Promise.all([store.getGuardrails(), store.marginDefaults()]);
+      const r = recommendPrice(c.landed_cents, d, { minMarginPct: g.min_margin_pct ?? 25, priceMinCents: g.price_min_cents ?? 0, priceMaxCents: g.price_max_cents ?? 0 });
+      await store.updateCandidate(c.id, { price_cents: r.price_cents, margin_pct: r.margin_pct, margin_cents: r.margin_cents, break_even_roas: r.break_even_roas, price_reasons: r.reasons });
+      return { ...r, datos_reales: c.real_data };
     },
   },
 ];

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 const TABS = [
   { href: "/admin/agentes", label: "Resumen" },
   { href: "/admin/agentes/bandeja", label: "Bandeja de aprobaciones" },
+  { href: "/admin/agentes/investigacion", label: "Investigación" },
   { href: "/admin/agentes/actividad", label: "Actividad" },
   { href: "/admin/agentes/autonomia", label: "Autonomía" },
   { href: "/admin/agentes/limites", label: "Límites" },

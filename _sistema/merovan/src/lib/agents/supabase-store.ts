@@ -1,8 +1,9 @@
 import "server-only";
-import type { serviceClient } from "@/lib/admin";
+import { loadSettings, marginDefaults, type serviceClient } from "@/lib/admin";
 import type { createClient } from "@/lib/supabase/server";
 import type { Guardrails, Usage } from "./policy";
-import type { AgentStore, ProductSummary, ProposalRow } from "./store";
+import type { MarginDefaults } from "./research";
+import type { AgentStore, CandidateRow, NewCandidate, NicheInput, ProductSummary, ProposalRow, ResearchNiche, SupplierOfferView } from "./store";
 
 type Db = Awaited<ReturnType<typeof createClient>> | NonNullable<ReturnType<typeof serviceClient>>;
 
@@ -140,5 +141,37 @@ export class SupabaseStore implements AgentStore {
     const { error } = await this.db.from("products").insert({ code, name: p.name, slug, description: p.description ?? "", price_cents: p.price_cents ?? null, status: "idea", created_by: this.actor });
     if (error) throw new Error(error.message);
     return code as string;
+  }
+
+  async marginDefaults(): Promise<MarginDefaults> { return marginDefaults(await loadSettings(this.db)); }
+  async createNiche(n: NicheInput) {
+    const { data, error } = await this.db.from("niches").insert({ name: n.name, thesis: n.thesis, audience: n.audience, evidence: n.evidence, risks: n.risks, confidence: n.confidence, demo: n.demo, agent: n.agent, run_id: n.runId }).select("id").single();
+    if (error) throw new Error(error.message);
+    return data.id as string;
+  }
+  async addCandidate(c: NewCandidate) {
+    const { data, error } = await this.db.from("niche_candidates").insert(c).select("id").single();
+    if (error) throw new Error(error.message);
+    return data.id as string;
+  }
+  async getCandidate(id: string) {
+    const { data } = await this.db.from("niche_candidates").select("*").eq("id", id).maybeSingle();
+    return data as CandidateRow | null;
+  }
+  async updateCandidate(id: string, patch: Partial<CandidateRow>) {
+    const { error } = await this.db.from("niche_candidates").update(patch).eq("id", id);
+    if (error) throw new Error(error.message);
+  }
+  async listResearch() {
+    const { data } = await this.db.from("niches").select("id, name, thesis, confidence, status, candidates:niche_candidates(*)").neq("status", "descartado").order("created_at", { ascending: false }).limit(20);
+    return (data ?? []) as ResearchNiche[];
+  }
+  async listSupplierOffers(): Promise<SupplierOfferView[]> {
+    const { data } = await this.db.from("supplier_offers")
+      .select("role, unit_cost_cents, shipping_cents, promised_days, measured_days, product:products(code), supplier:suppliers(name, warehouse_country, reliability)").limit(100);
+    return (data ?? []).map((o) => {
+      const r = o as unknown as { role: string; unit_cost_cents: number; shipping_cents: number; promised_days: number | null; measured_days: number | null; product: { code: string } | null; supplier: { name: string; warehouse_country: string | null; reliability: number | null } | null };
+      return { product: r.product?.code ?? "", supplier: r.supplier?.name ?? "", warehouse_country: r.supplier?.warehouse_country ?? null, role: r.role, unit_cost_cents: r.unit_cost_cents, shipping_cents: r.shipping_cents, promised_days: r.promised_days, measured_days: r.measured_days, reliability: r.supplier?.reliability ?? null };
+    });
   }
 }

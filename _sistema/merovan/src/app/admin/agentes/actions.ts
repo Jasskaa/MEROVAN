@@ -44,7 +44,7 @@ export async function runAgentNow(formData: FormData) {
   const agent = agentByKey(key);
   if (!agent?.ready) back("/admin/agentes", "error", "Ese agente aún no está disponible");
   const store = await storeFor(staff.id);
-  const r = await runAgent(store, modelFor(), key, str(formData, "instructions") || "Haz tu ciclo habitual.");
+  const r = await runAgent(store, modelFor(key), key, str(formData, "instructions") || "Haz tu ciclo habitual.");
   await audit("ejecutar_agente", "agent_runs", r.runId, { agent: key, status: r.status });
   back("/admin/agentes/actividad", r.status === "ok" ? "ok" : "error", `${agent!.name}: ${r.status}${r.budgetAlert ? " · aviso: 80 % del presupuesto de IA" : ""}`);
 }
@@ -122,4 +122,37 @@ export async function updateConfigItem(key: string, formData: FormData) {
   const { error } = await supabase.from("config_items")
     .update({ status: str(formData, "status"), notes: str(formData, "notes"), updated_at: new Date().toISOString() }).eq("key", key);
   back("/admin/configuracion", error ? "error" : "ok", error?.message ?? "Actualizado");
+}
+
+export async function acceptCandidate(id: string) {
+  const staff = await requireRole("owner", "producto");
+  const store = await storeFor(staff.id);
+  const c = await store.getCandidate(id);
+  if (!c || c.status !== "propuesto") back("/admin/agentes/investigacion", "error", "Candidato no disponible");
+  if (c.demo) back("/admin/agentes/investigacion", "error", "Es un candidato de ejemplo: no se convierte en producto");
+  const supabase = await createClient();
+  const { data: niche } = await supabase.from("niches").select("name").eq("id", c.niche_id).single();
+  const code = await store.createProductDraft({ name: c.name, description: c.description, price_cents: c.price_cents ?? undefined });
+  const { data: product } = await supabase.from("products").update({ niche: niche?.name ?? null, score: Math.round(Number(c.score_total)) }).eq("code", code).select("id").single();
+  await store.updateCandidate(id, { status: "aceptado", ...(product ? { product_id: product.id } : {}) });
+  await audit("aceptar_candidato", "niche_candidates", id, { code });
+  back("/admin/agentes/investigacion", "ok", `Creado ${code} como idea. Revisa proveedor y muestras en su ficha.`);
+}
+
+export async function discardCandidate(id: string) {
+  const staff = await requireRole("owner", "producto");
+  const store = await storeFor(staff.id);
+  await store.updateCandidate(id, { status: "descartado" });
+  await audit("descartar_candidato", "niche_candidates", id, {});
+  back("/admin/agentes/investigacion", "ok", "Candidato descartado");
+}
+
+export async function deleteDemoResearch() {
+  await requireRole("owner");
+  const supabase = await createClient();
+  const { error } = await supabase.from("niches").delete().eq("demo", true);
+  if (error) back("/admin/agentes/investigacion", "error", error.message);
+  await supabase.from("niche_candidates").delete().eq("demo", true);
+  await audit("borrar_demo_investigacion", "niches", null, {});
+  back("/admin/agentes/investigacion", "ok", "Datos de ejemplo borrados");
 }
