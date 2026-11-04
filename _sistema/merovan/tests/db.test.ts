@@ -115,4 +115,57 @@ describe("database", () => {
     `);
     await expect(db.exec("update products set status = 'escalando' where code = 'PRD-0001'")).rejects.toThrow(/respaldo/);
   });
+
+  describe("store RPCs", () => {
+    const SID = "test-session-000000000001";
+    const variant = async () =>
+      (await db.query<{ id: string }>("select id from product_variants where sku = 'ORG-3'")).rows[0].id;
+
+    it("adds to cart as an anonymous visitor, capped at 20 units", async () => {
+      const v = await variant();
+      const [first] = await as<{ n: number }>("anon", null, `select cart_set('${SID}', '${v}', 2, true) as n`);
+      expect(first.n).toBe(2);
+      const [capped] = await as<{ n: number }>("anon", null, `select cart_set('${SID}', '${v}', 50, true) as n`);
+      expect(capped.n).toBe(20);
+      await as("anon", null, `select cart_set('${SID}', '${v}', 2)`);
+    });
+
+    it("refuses products that are not published", async () => {
+      await db.exec(`insert into product_variants (product_id, sku, stock)
+                     select id, 'LAMP-1', 5 from products where code = 'PRD-0002'`);
+      const v = (await db.query<{ id: string }>("select id from product_variants where sku = 'LAMP-1'")).rows[0].id;
+      await expect(as("anon", null, `select cart_set('${SID}', '${v}', 1, true)`)).rejects.toThrow(/no disponible/);
+    });
+
+    it("creates the order with database prices, VAT and cost snapshot", async () => {
+      const [{ id }] = await as<{ id: string }>("anon", null, `select checkout_create_order('${SID}') as id`);
+      const { rows } = await db.query<{ total_cents: number; vat_cents: number; status: string }>(
+        `select total_cents, vat_cents, status from orders where id = '${id}'`);
+      // 2 × 19,95 € = 39,90 € ; VAT included at 21 %: 3990 × 0.21 / 1.21 = 692.48 → 692
+      expect(rows[0]).toEqual({ total_cents: 3990, vat_cents: 692, status: "pendiente_pago" });
+      const items = await db.query<{ unit_cost_cents: number }>(`select unit_cost_cents from order_items where order_id = '${id}'`);
+      expect(items.rows[0].unit_cost_cents).toBe(740); // 4,50 € product + 2,90 € shipping
+    });
+
+    it("marks the order paid once, decrements stock and closes the cart", async () => {
+      const { rows: [o] } = await db.query<{ id: string }>("select id from orders where status = 'pendiente_pago'");
+      await db.exec(`select mark_order_paid('${o.id}', 'cs_test', 'a@example.com', 'Ana', 'ES')`);
+      await db.exec(`select mark_order_paid('${o.id}', 'cs_test', 'a@example.com', 'Ana', 'ES')`); // duplicate webhook
+      const stock = await db.query<{ stock: number }>("select stock from product_variants where sku = 'ORG-3'");
+      expect(stock.rows[0].stock).toBe(98);
+      const cart = await db.query<{ status: string }>(`select status from carts where session_id = '${SID}'`);
+      expect(cart.rows[0].status).toBe("convertido");
+    });
+
+    it("anonymous visitors cannot mark orders as paid", async () => {
+      await expect(as("anon", null, "select mark_order_paid(gen_random_uuid(), 'x', 'x', 'x', 'ES')")).rejects.toThrow(/permission denied/);
+    });
+
+    it("tracks a product view", async () => {
+      await as("anon", null, `select track_view('${SID}', '/p/organizador-de-cables', 'organizador-de-cables')`);
+      const { rows } = await db.query<{ n: number }>("select count(product_id)::int as n from page_views");
+      expect(rows[0].n).toBe(1);
+    });
+  });
 });
+

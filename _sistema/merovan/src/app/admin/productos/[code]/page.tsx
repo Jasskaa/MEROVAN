@@ -10,8 +10,10 @@ import {
 import { centsToInput, date, eur, eurFloat } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 import {
-  addOffer, addSample, addVariant, changeStatus, deleteMedia, deleteVariant, saveBasics, saveLegal, saveScorecard, updateSample,
+  addOffer, addSample, addVariant, changeStatus, deleteMedia, deleteVariant, requestPublish, saveBasics, saveLegal,
+  saveScorecard, unpublish, updateSample,
 } from "../actions";
+import { validateListing } from "@/lib/domain/listing";
 import { MediaUploader } from "./media-uploader";
 import { ScoreSliders } from "./score-sliders";
 
@@ -44,7 +46,7 @@ export default async function ProductPage({
   const canEdit = staff.role === "owner" || staff.role === "producto";
   const canMedia = canEdit || staff.role === "marketing";
 
-  const [variants, media, offers, suppliers, samples, history, settings] = await Promise.all([
+  const [variants, media, offers, suppliers, samples, history, settings, pendingApprovals] = await Promise.all([
     supabase.from("product_variants").select("*").eq("product_id", p.id).order("created_at"),
     supabase.from("product_media").select("*").eq("product_id", p.id).order("position"),
     seesCosts ? supabase.from("supplier_offers").select("*, suppliers(code, name)").eq("product_id", p.id) : null,
@@ -52,7 +54,17 @@ export default async function ProductPage({
     seesCosts ? supabase.from("samples").select("*, suppliers(name)").eq("product_id", p.id).order("code") : null,
     supabase.from("status_history").select("*").eq("product_id", p.id).order("changed_at", { ascending: false }),
     loadSettings(),
+    supabase.from("approvals").select("action, payload").eq("entity_id", code).eq("status", "pendiente"),
   ]);
+  const listing = validateListing({
+    name: p.name, description: p.description, bullets: p.bullets ?? [],
+    priceCents: p.price_cents, compareAtCents: p.compare_at_cents,
+    gpsrManufacturer: p.gpsr_manufacturer, gpsrAddress: p.gpsr_address, gpsrContact: p.gpsr_contact,
+    legalRedFlag: p.legal_red_flag,
+    imageCount: (media.data ?? []).filter((m) => m.kind === "image").length,
+    videoCount: (media.data ?? []).filter((m) => m.kind === "video").length,
+    variants: variants.data ?? [],
+  });
 
   const legal = (p.legal_checks ?? {}) as LegalChecks;
   const ctx = {
@@ -288,6 +300,43 @@ export default async function ProductPage({
             </Card>
           </div>
         )}
+
+        {/* ---------- Publication ---------- */}
+        <div id="publicacion" className="xl:col-span-2">
+          <Card title="Publicación en la tienda" actions={
+            p.publish_status === "publicado" ? <Link href={`/p/${p.slug}`} target="_blank" className="text-xs text-muted hover:text-gold">Ver en la tienda ↗</Link> : null
+          }>
+            <p className="mb-3 text-sm">
+              Estado: <Badge tone={p.publish_status === "publicado" ? "ok" : p.publish_status === "pendiente_aprobacion" ? "gold" : "neutral"}>
+                {p.publish_status.replaceAll("_", " ")}
+              </Badge>
+            </p>
+            {listing.errors.length > 0 && (
+              <ul className="mb-3 space-y-1 text-sm text-danger">{listing.errors.map((e) => <li key={e}>✕ {e}</li>)}</ul>
+            )}
+            {listing.warnings.length > 0 && (
+              <ul className="mb-3 space-y-1 text-sm text-muted">{listing.warnings.map((w) => <li key={w}>· {w}</li>)}</ul>
+            )}
+            {listing.ok && listing.warnings.length === 0 && <p className="mb-3 text-sm text-ok">✓ La ficha cumple todos los requisitos.</p>}
+            {(pendingApprovals.data ?? []).length > 0 && (
+              <Notice>
+                Pendiente de aprobación: {pendingApprovals.data!.map((a) => a.action === "change_price"
+                  ? `cambio de precio a ${eur(a.payload.to)}` : "publicación").join(" · ")}
+              </Notice>
+            )}
+            {canEdit && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {["borrador", "retirado", "aprobado"].includes(p.publish_status) && (
+                  <form action={requestPublish.bind(null, code)}><button className={btn} disabled={!listing.ok}>Solicitar publicación</button></form>
+                )}
+                {p.publish_status === "publicado" && (
+                  <form action={unpublish.bind(null, code)}><button className={btnGhost}>Retirar de la tienda</button></form>
+                )}
+              </div>
+            )}
+            <p className="mt-3 text-xs text-muted">Publicar y cambiar el precio de un producto publicado requieren la aprobación del owner (Aprobaciones).</p>
+          </Card>
+        </div>
 
         {/* ---------- Status ---------- */}
         <div id="estado" className="xl:col-span-2">

@@ -36,7 +36,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       </header>
       {error && <Notice tone="danger">{error}</Notice>}
 
-      <Card title="Catálogo">
+      <Card title="Catálogo" actions={
+        // eslint-disable-next-line @next/next/no-html-link-for-pages -- file download, not a page
+        <a href="/admin/productos/exportar" className="text-xs text-muted hover:text-gold">Exportar CSV para TikTok Shop ↓</a>
+      }>
         <Table head={["ID", "Producto", "Estado", "Tienda", "Puntuación", "Precio"]}>
           {(products ?? []).map((p) => (
             <tr key={p.code}>

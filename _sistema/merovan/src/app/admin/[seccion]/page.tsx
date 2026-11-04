@@ -4,11 +4,8 @@ import { ADMIN_NAV } from "@/lib/nav";
 // Placeholder for modules built in later phases.
 const PHASE: Record<string, string> = {
   pedidos: "F",
-  carritos: "C",
-  visitas: "C",
   dinero: "F",
   marketing: "D",
-  aprobaciones: "C",
 };
 
 export default async function Section({ params }: { params: Promise<{ seccion: string }> }) {

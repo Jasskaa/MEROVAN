@@ -10,7 +10,7 @@ export default async function Dashboard() {
   const [sales, visits, carts, products] = await Promise.all([
     supabase.from("daily_sales").select("orders, revenue_cents").gte("day", sinceDay),
     supabase.from("page_views").select("*", { count: "exact", head: true }).gte("at", since),
-    supabase.from("carts").select("status").gte("created_at", since),
+    supabase.from("cart_overview").select("status").gt("items", 0).gte("created_at", since),
     supabase.from("products").select("code, name, status, publish_status, price_cents").order("code"),
   ]);
 
@@ -23,7 +23,7 @@ export default async function Dashboard() {
   const kpis = [
     { label: "Ingresos (IVA incl.)", value: sales.error ? "—" : eur(revenue) },
     { label: "Pedidos", value: sales.error ? "—" : String(orders) },
-    { label: "Visitas", value: String(visits.count ?? 0) },
+    { label: "Páginas vistas", value: String(visits.count ?? 0) },
     { label: "Carritos / abandonados", value: `${cartRows.length} / ${abandoned}` },
     { label: "Conversión", value: `${conversion.toFixed(2).replace(".", ",")} %` },
   ];

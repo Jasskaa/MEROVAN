@@ -6,6 +6,7 @@ import { audit, requireRole } from "@/lib/admin";
 import {
   CRITERIA, LEGAL_CHECKS, type LegalValue, type Status, scoreTotal, statusLabel, transitionBlockers,
 } from "@/lib/domain/product";
+import { validateListing } from "@/lib/domain/listing";
 import { parseEuros, slugify } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
@@ -41,7 +42,7 @@ export async function createProduct(formData: FormData) {
 }
 
 export async function saveBasics(code: string, formData: FormData) {
-  await requireRole(...EDITORS);
+  const staff = await requireRole(...EDITORS);
   let price: number | null, compareAt: number | null;
   try {
     price = parseEuros(formData.get("price"));
@@ -51,6 +52,18 @@ export async function saveBasics(code: string, formData: FormData) {
   }
   const weight = str(formData, "weight_g");
   const { supabase, id } = await productId(code);
+
+  // A public price change on a live product needs the owner's approval: keep the old one meanwhile.
+  const { data: live } = await supabase.from("products").select("publish_status, price_cents").eq("id", id).single();
+  const priceNeedsApproval = live?.publish_status === "publicado" && price !== live.price_cents;
+  if (priceNeedsApproval) {
+    await supabase.from("approvals").insert({
+      action: "change_price", entity: "products", entity_id: code,
+      payload: { from: live.price_cents, to: price }, reason: "Cambio de precio de un producto publicado",
+      requested_by: staff.id,
+    });
+  }
+
   const { error } = await supabase
     .from("products")
     .update({
@@ -58,7 +71,7 @@ export async function saveBasics(code: string, formData: FormData) {
       niche: str(formData, "niche") || null,
       description: str(formData, "description"),
       bullets: str(formData, "bullets").split("\n").map((b) => b.trim()).filter(Boolean),
-      price_cents: price,
+      ...(priceNeedsApproval ? {} : { price_cents: price }),
       compare_at_cents: compareAt,
       weight_g: weight ? Number(weight) : null,
       origin_country: str(formData, "origin_country") || null,
@@ -69,7 +82,45 @@ export async function saveBasics(code: string, formData: FormData) {
     })
     .eq("id", id);
   if (error) back(code, "error", error.message, "#datos");
-  back(code, "ok", "Datos guardados", "#datos");
+  back(code, "ok", priceNeedsApproval ? "Datos guardados. El nuevo precio queda pendiente de aprobación." : "Datos guardados", "#datos");
+}
+
+export async function requestPublish(code: string) {
+  const staff = await requireRole(...EDITORS);
+  const { supabase, id } = await productId(code);
+  const [{ data: p }, { data: media }, { data: variants }] = await Promise.all([
+    supabase.from("products").select("*").eq("id", id).single(),
+    supabase.from("product_media").select("kind").eq("product_id", id),
+    supabase.from("product_variants").select("sku, stock").eq("product_id", id),
+  ]);
+  const check = validateListing({
+    name: p.name, description: p.description, bullets: p.bullets ?? [],
+    priceCents: p.price_cents, compareAtCents: p.compare_at_cents,
+    gpsrManufacturer: p.gpsr_manufacturer, gpsrAddress: p.gpsr_address, gpsrContact: p.gpsr_contact,
+    legalRedFlag: p.legal_red_flag,
+    imageCount: (media ?? []).filter((m) => m.kind === "image").length,
+    videoCount: (media ?? []).filter((m) => m.kind === "video").length,
+    variants: variants ?? [],
+  });
+  if (!check.ok) back(code, "error", `No se puede publicar: ${check.errors.join(" · ")}`, "#publicacion");
+
+  const { error } = await supabase.from("approvals").insert({
+    action: "publish_product", entity: "products", entity_id: code, payload: {},
+    reason: "Publicar en la tienda", requested_by: staff.id,
+  });
+  if (error) back(code, "error", error.message, "#publicacion");
+  await supabase.from("products").update({ publish_status: "pendiente_aprobacion" }).eq("id", id);
+  await audit("solicitar_publicacion", "products", code);
+  back(code, "ok", "Publicación solicitada: queda pendiente de aprobación del owner", "#publicacion");
+}
+
+export async function unpublish(code: string) {
+  await requireRole(...EDITORS);
+  const { supabase, id } = await productId(code);
+  const { error } = await supabase.from("products").update({ publish_status: "retirado" }).eq("id", id);
+  if (error) back(code, "error", error.message, "#publicacion");
+  await audit("retirar_producto", "products", code);
+  back(code, "ok", "Producto retirado de la tienda", "#publicacion");
 }
 
 export async function saveScorecard(code: string, formData: FormData) {
