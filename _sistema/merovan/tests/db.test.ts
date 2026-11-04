@@ -155,6 +155,10 @@ describe("database", () => {
       expect(stock.rows[0].stock).toBe(98);
       const cart = await db.query<{ status: string }>(`select status from carts where session_id = '${SID}'`);
       expect(cart.rows[0].status).toBe("convertido");
+      // Estimated Stripe fee: 3990 × 1,4 % = 55,86 → 56 + 25 fixed = 81 cents ; delivery promised in 3 days (offer)
+      const fee = await db.query<{ payment_fee_cents: number; days: number }>(
+        `select payment_fee_cents, promised_delivery_on - current_date as days from orders where id = '${o.id}'`);
+      expect(fee.rows[0]).toEqual({ payment_fee_cents: 81, days: 3 });
     });
 
     it("anonymous visitors cannot mark orders as paid", async () => {

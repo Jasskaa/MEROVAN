@@ -6,6 +6,7 @@ export const ADMIN_NAV: { href: string; label: string; roles: Role[] | "all" }[]
   { href: "/admin/decisiones", label: "Decisiones", roles: ["owner", "producto", "marketing", "finanzas"] },
   { href: "/admin/productos", label: "Productos", roles: "all" },
   { href: "/admin/pedidos", label: "Pedidos", roles: ["owner", "operaciones", "finanzas"] },
+  { href: "/admin/soporte", label: "Soporte", roles: ["owner", "operaciones", "finanzas"] },
   { href: "/admin/carritos", label: "Carritos", roles: "all" },
   { href: "/admin/visitas", label: "Visitas", roles: "all" },
   { href: "/admin/dinero", label: "Dinero", roles: ["owner", "finanzas"] },
