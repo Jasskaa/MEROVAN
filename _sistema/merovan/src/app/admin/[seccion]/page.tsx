@@ -5,7 +5,6 @@ import { ADMIN_NAV } from "@/lib/nav";
 const PHASE: Record<string, string> = {
   pedidos: "F",
   dinero: "F",
-  marketing: "D",
 };
 
 export default async function Section({ params }: { params: Promise<{ seccion: string }> }) {

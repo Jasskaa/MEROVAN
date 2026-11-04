@@ -10,7 +10,7 @@ export const ADMIN_NAV: { href: string; label: string; roles: Role[] | "all" }[]
   { href: "/admin/dinero", label: "Dinero", roles: ["owner", "finanzas"] },
   { href: "/admin/proveedores", label: "Proveedores", roles: ["owner", "producto", "operaciones", "finanzas"] },
   { href: "/admin/simulador", label: "Simulador", roles: ["owner", "producto", "finanzas"] },
-  { href: "/admin/marketing", label: "Marketing", roles: ["owner", "marketing"] },
+  { href: "/admin/marketing", label: "Marketing", roles: ["owner", "marketing", "producto", "finanzas"] },
   { href: "/admin/aprobaciones", label: "Aprobaciones", roles: "all" },
   { href: "/admin/ajustes", label: "Ajustes", roles: ["owner", "finanzas"] },
   { href: "/admin/equipo", label: "Equipo", roles: ["owner"] },
