@@ -35,7 +35,7 @@ export function BuyBox({ variants, basePrice, action, name }: {
           <div className="flex flex-wrap gap-2">
             {available.map((v) => (
               <button type="button" key={v.id} onClick={() => { setVariant(v.id); setQty(1); }} aria-pressed={v.id === variant}
-                className={`border px-4 py-2.5 text-sm transition ${v.id === variant ? "border-ink bg-ink text-ivory" : "border-line hover:border-ink"}`}>
+                className={`rounded-full border px-4 py-2.5 text-sm transition ${v.id === variant ? "border-ink bg-ink text-ivory" : "border-line hover:border-ink"}`}>
                 {v.title}{v.price_cents && v.price_cents !== basePrice ? ` · ${eur(v.price_cents)}` : ""}
               </button>
             ))}
@@ -44,12 +44,12 @@ export function BuyBox({ variants, basePrice, action, name }: {
       )}
 
       <div className="flex gap-3">
-        <div className="flex items-center border border-line">
+        <div className="flex items-center rounded-full border border-line">
           <button type="button" onClick={() => setQty(Math.max(1, qty - 1))} className="h-12 w-11 text-lg hover:bg-sand" aria-label="Quitar una unidad">−</button>
           <span className="w-8 text-center tabular-nums" aria-live="polite">{qty}</span>
           <button type="button" onClick={() => setQty(Math.min(max, qty + 1))} className="h-12 w-11 text-lg hover:bg-sand" aria-label="Añadir una unidad">+</button>
         </div>
-        <button className="h-12 flex-1 bg-ink text-sm font-medium uppercase tracking-[0.2em] text-ivory transition hover:bg-ink-soft">
+        <button className="h-12 flex-1 rounded-full bg-ink text-sm font-medium uppercase tracking-[0.2em] text-ivory transition hover:bg-ink-soft">
           Añadir al carrito · {eur(price * qty)}
         </button>
       </div>
@@ -58,10 +58,10 @@ export function BuyBox({ variants, basePrice, action, name }: {
       {/* Mobile sticky bar */}
       <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line bg-ivory/95 px-4 py-3 backdrop-blur sm:hidden">
         <div className="min-w-0 flex-1">
-          <p className="truncate font-serif text-lg leading-tight">{name}</p>
+          <p className="truncate font-medium leading-tight">{name}</p>
           <p className="text-sm tabular-nums">{eur(price)}</p>
         </div>
-        <button className="h-11 bg-ink px-5 text-xs font-medium uppercase tracking-[0.18em] text-ivory">Añadir</button>
+        <button className="h-11 rounded-full bg-ink px-5 text-xs font-medium uppercase tracking-[0.18em] text-ivory">Añadir</button>
       </div>
     </form>
   );

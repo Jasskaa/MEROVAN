@@ -88,7 +88,7 @@ export function Simulator({
 
       {scenarios.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-border bg-surface p-5 lg:col-span-2">
-          <h2 className="mb-3 font-serif text-xl">Escenarios guardados</h2>
+          <h2 className="mb-3 text-base font-semibold">Escenarios guardados</h2>
           <table className="w-full text-sm">
             <thead className="text-left text-xs text-muted">
               <tr><th className="p-2">Escenario</th><th className="p-2">Precio</th><th className="p-2">Coste+envío</th><th className="p-2">Margen</th><th className="p-2">ROAS eq.</th><th className="p-2">Test</th><th /></tr>

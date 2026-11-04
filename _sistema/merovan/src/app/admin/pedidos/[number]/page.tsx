@@ -39,7 +39,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
     <div className="space-y-6">
       <header>
         <Link href="/admin/pedidos" className="text-xs text-muted hover:text-gold">← Pedidos</Link>
-        <h1 className="font-serif text-3xl">Pedido #{o.number}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Pedido #{o.number}</h1>
         <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
           <Badge tone="gold">{o.status.replaceAll("_", " ")}</Badge> {o.channel}{o.external_ref && ` · ${o.external_ref}`} ·
           pagado {date(o.paid_at)} · entrega prometida {date(o.promised_delivery_on)}

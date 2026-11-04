@@ -62,7 +62,7 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="font-serif text-3xl">Aprobaciones</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Aprobaciones</h1>
         <p className="text-sm text-muted">Nada que cueste dinero, publique o cambie un precio público se ejecuta sin la aprobación del owner.</p>
       </header>
       {ok && <Notice tone="ok">{ok}</Notice>}

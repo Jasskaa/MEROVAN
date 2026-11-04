@@ -72,7 +72,7 @@ export default async function SimulatorPage({
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="font-serif text-3xl">Simulador de margen</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Simulador de margen</h1>
         <p className="text-sm text-muted">{productName ? `${producto} · ${productName}` : "Escenario libre"} · todos los importes sin IVA salvo el precio</p>
       </header>
       {ok && <Notice tone="ok">Escenario guardado</Notice>}

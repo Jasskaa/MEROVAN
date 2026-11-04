@@ -45,7 +45,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="font-serif text-3xl">Pedidos</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Pedidos</h1>
         <p className="text-sm text-muted">{orders?.length ?? 0} pedidos{late.length ? ` · ${late.length} con aviso` : ""}</p>
       </header>
       <Toast ok={ok} error={error} />

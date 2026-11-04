@@ -83,7 +83,7 @@ export default async function TeamPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="font-serif text-3xl">Equipo</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Equipo</h1>
       {ok && <Notice tone="ok">{ok}</Notice>}
       {error && <Notice tone="danger">{error}</Notice>}
       {creado && clave && (

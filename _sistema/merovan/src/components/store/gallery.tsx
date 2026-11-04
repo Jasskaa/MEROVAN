@@ -38,7 +38,7 @@ export function Gallery({ items, name }: { items: GalleryItem[]; name: string })
       <div className="relative flex-1">
         <div ref={track}
           onScroll={(e) => { const el = e.currentTarget; setActive(Math.round(el.scrollLeft / el.clientWidth)); }}
-          className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-sm bg-sand">
+          className="no-scrollbar flex snap-x snap-mandatory overflow-x-auto rounded-2xl bg-sand">
           {items.map((m, i) => (
             <div key={m.url} className="relative aspect-[4/5] w-full shrink-0 snap-start overflow-hidden">
               {m.kind === "video" ? (

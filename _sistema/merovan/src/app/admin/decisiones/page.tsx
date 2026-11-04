@@ -61,7 +61,7 @@ export default async function DecisionsPage({ searchParams }: { searchParams: Pr
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-serif text-3xl">Decisiones</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Decisiones</h1>
           <p className="text-sm text-muted">Escalar · arreglar · matar · esperar, con las reglas y los números que lo justifican.</p>
         </div>
         {canDecide && <form action={recalculate}><button className={btn}>Recalcular ahora</button></form>}

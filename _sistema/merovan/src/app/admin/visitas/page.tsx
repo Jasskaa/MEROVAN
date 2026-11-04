@@ -46,7 +46,7 @@ export default async function VisitsPage({ searchParams }: { searchParams: Promi
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-serif text-3xl">Visitas</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Visitas</h1>
           <p className="text-sm text-muted">Visitas anónimas a la tienda · últimos {days} días</p>
         </div>
         <nav className="flex gap-1 text-sm">

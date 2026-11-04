@@ -12,7 +12,7 @@ export function SetupForm() {
     <main className="flex min-h-screen items-center justify-center bg-[#0b0a08] px-4 py-8">
       <form action={action} className="w-full max-w-sm space-y-4 rounded-2xl border border-[#2a2620] bg-[#15130f] p-8 text-[#f2ece1]">
         <Image src="/logo-merovan.webp" alt="MEROVAN" width={240} height={160} className="mx-auto" priority />
-        <h1 className="text-center font-serif text-2xl tracking-widest">Alta inicial</h1>
+        <h1 className="text-center text-xl font-semibold tracking-widest">Alta inicial</h1>
         <p className="text-center text-sm text-[#a39a8a]">
           Crea la cuenta del owner. Solo se puede hacer una vez; al resto del equipo lo darás de alta desde el panel.
         </p>

@@ -29,7 +29,7 @@ export default async function CartsPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="font-serif text-3xl">Carritos</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Carritos</h1>
         <p className="text-sm text-muted">Últimos 30 días · un carrito se considera abandonado tras el tiempo fijado en Ajustes</p>
       </header>
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">

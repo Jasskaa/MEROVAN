@@ -41,7 +41,7 @@ export default async function SuppliersPage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="space-y-6">
-      <h1 className="font-serif text-3xl">Proveedores</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Proveedores</h1>
       {ok && <Notice tone="ok">{ok}</Notice>}
       {error && <Notice tone="danger">{error}</Notice>}
 

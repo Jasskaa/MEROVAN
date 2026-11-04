@@ -8,15 +8,16 @@ import { createProduct } from "./actions";
 
 export const metadata = { title: "Productos" };
 
-export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ error?: string; estado?: string }> }) {
+export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ error?: string; estado?: string; q?: string }> }) {
   const staff = await requireRole();
-  const { error, estado } = await searchParams;
+  const { error, estado, q } = await searchParams;
   const supabase = await createClient();
   let query = supabase
     .from("products")
     .select("code, name, status, publish_status, price_cents, score, legal_red_flag, updated_at")
     .order("code", { ascending: false });
   if (estado) query = query.eq("status", estado);
+  if (q?.trim()) query = query.or(`name.ilike.%${q.trim().replace(/[%_,()]/g, "")}%,code.ilike.%${q.trim().replace(/[%_,()]/g, "")}%`);
   const { data: products } = await query;
   const canEdit = staff.role === "owner" || staff.role === "producto";
 
@@ -24,7 +25,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-serif text-3xl">Productos</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Productos</h1>
           <p className="text-sm text-muted">{products?.length ?? 0} productos{estado ? ` · ${statusLabel(estado)}` : ""}</p>
         </div>
         {canEdit && (

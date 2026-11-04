@@ -42,7 +42,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="font-serif text-3xl">Ajustes</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Ajustes</h1>
         <p className="text-sm text-muted">
           Parámetros de cálculo. Los datos de plataformas cambian: márcalos como verificados solo tras comprobarlos en la fuente oficial.
           Porcentajes como fracción (0.21 = 21 %).

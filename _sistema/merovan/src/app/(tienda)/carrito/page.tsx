@@ -17,14 +17,14 @@ export default async function CartPage({ searchParams }: { searchParams: Promise
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-      <h1 className="font-serif text-4xl sm:text-5xl">Tu carrito</h1>
+      <h1 className="font-display text-5xl uppercase sm:text-7xl">Tu carrito</h1>
       {error && <p role="alert" className="mt-6 border border-red-700/40 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>}
 
       {lines.length === 0 ? (
         <div className="mt-12 border border-line px-6 py-20 text-center">
-          <p className="font-serif text-2xl">Tu carrito está vacío</p>
+          <p className="text-2xl font-semibold">Tu carrito está vacío</p>
           <p className="mt-2 text-sm text-stone">Descubre los productos que hemos seleccionado.</p>
-          <Link href="/#coleccion" className="mt-8 inline-flex items-center gap-2 bg-ink px-7 py-3.5 text-sm uppercase tracking-[0.18em] text-ivory">
+          <Link href="/#productos" className="mt-8 inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3.5 text-sm uppercase tracking-[0.18em] text-ivory">
             Ver colección <IconArrow className="h-4 w-4" />
           </Link>
         </div>
@@ -38,7 +38,7 @@ export default async function CartPage({ searchParams }: { searchParams: Promise
                 </Link>
                 <div className="flex flex-1 flex-col justify-between gap-3 sm:flex-row">
                   <div>
-                    <Link href={`/p/${l.slug}`} className="font-serif text-xl hover:text-brass">{l.product_name}</Link>
+                    <Link href={`/p/${l.slug}`} className="font-medium hover:text-brass">{l.product_name}</Link>
                     {l.variant_title !== "Única" && <p className="mt-0.5 text-sm text-stone">{l.variant_title}</p>}
                     <p className="mt-1 text-sm tabular-nums text-stone">{eur(l.unit_price_cents)} / ud.</p>
                   </div>
@@ -55,15 +55,15 @@ export default async function CartPage({ searchParams }: { searchParams: Promise
             ))}
           </ul>
 
-          <aside className="h-fit border border-line bg-sand/60 p-6 lg:sticky lg:top-24">
+          <aside className="h-fit rounded-3xl bg-sand p-6 lg:sticky lg:top-24">
             <h2 className="text-[11px] uppercase tracking-[0.22em] text-stone">Resumen</h2>
             <dl className="mt-5 space-y-3 text-sm">
               <div className="flex justify-between"><dt>Productos ({units})</dt><dd className="tabular-nums">{eur(total)}</dd></div>
               <div className="flex justify-between text-stone"><dt>Envío</dt><dd>Se calcula al pagar</dd></div>
-              <div className="flex justify-between border-t border-line pt-3 text-lg"><dt className="font-serif">Total {eur(total)}</dt><dd className="text-xs text-stone">IVA incluido</dd></div>
+              <div className="flex justify-between border-t border-line pt-3 text-lg"><dt className="font-semibold">Total {eur(total)}</dt><dd className="text-xs text-stone">IVA incluido</dd></div>
             </dl>
             <form action={checkout} className="mt-6">
-              <button className="flex h-12 w-full items-center justify-center gap-2 bg-ink text-sm font-medium uppercase tracking-[0.2em] text-ivory transition hover:bg-ink-soft">
+              <button className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-ink text-sm font-medium uppercase tracking-[0.2em] text-ivory transition hover:bg-ink-soft">
                 <IconLock className="h-4 w-4" /> Pagar de forma segura
               </button>
             </form>

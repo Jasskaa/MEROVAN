@@ -64,7 +64,7 @@ export default async function ProductPage({ params, searchParams }: {
     <main className="pb-24 sm:pb-0">
       <nav aria-label="Ruta" className="mx-auto max-w-7xl px-4 pt-6 text-xs text-stone sm:px-6">
         <Link href="/" className="hover:text-ink">Inicio</Link> <span className="mx-1.5">/</span>
-        <Link href="/#coleccion" className="hover:text-ink">Colección</Link> <span className="mx-1.5">/</span>
+        <Link href="/#productos" className="hover:text-ink">Colección</Link> <span className="mx-1.5">/</span>
         <span className="text-ink">{p.name}</span>
       </nav>
 
@@ -73,7 +73,7 @@ export default async function ProductPage({ params, searchParams }: {
 
         <div className="lg:sticky lg:top-24 lg:self-start">
           <p className="text-[11px] uppercase tracking-[0.28em] text-brass">MEROVAN · {p.code}</p>
-          <h1 className="mt-3 font-serif text-4xl leading-[1.1] sm:text-5xl">{p.name}</h1>
+          <h1 className="mt-3 font-display text-4xl uppercase leading-none sm:text-6xl">{p.name}</h1>
           <div className="mt-5 flex items-baseline gap-3">
             <span className="text-2xl tabular-nums">{eur(p.price_cents)}</span>
             {off && (
@@ -135,7 +135,7 @@ export default async function ProductPage({ params, searchParams }: {
 
       {related.length > 0 && (
         <section className="mx-auto max-w-7xl border-t border-line px-4 py-20 sm:px-6">
-          <h2 className="mb-10 font-serif text-3xl sm:text-4xl">También te puede gustar</h2>
+          <h2 className="mb-10 font-display text-4xl uppercase sm:text-5xl">También te puede gustar</h2>
           <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
             {related.map((r) => <ProductCard key={r.code} p={r} />)}
           </div>

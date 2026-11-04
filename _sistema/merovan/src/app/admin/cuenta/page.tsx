@@ -22,7 +22,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const { ok, error } = await searchParams;
   return (
     <div className="max-w-lg space-y-6">
-      <h1 className="font-serif text-3xl">Mi cuenta</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">Mi cuenta</h1>
       <p className="text-sm text-muted">{staff.name} · {staff.email} · rol <strong>{staff.role}</strong></p>
       {ok && <Notice tone="ok">Contraseña cambiada</Notice>}
       {error && <Notice tone="danger">{error}</Notice>}

@@ -37,7 +37,7 @@ export default async function SupportPage({ searchParams }: { searchParams: Prom
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="font-serif text-3xl">Soporte</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Soporte</h1>
         <p className="text-sm text-muted">Incidencias, devoluciones y disputas · respuesta en menos de {slaHours} h</p>
       </header>
       <Toast ok={ok} error={error} />

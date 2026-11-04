@@ -86,7 +86,7 @@ export default async function ProductPage({
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <Link href="/admin/productos" className="text-xs text-muted hover:text-gold">← Productos</Link>
-          <h1 className="font-serif text-3xl">{p.name}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{p.name}</h1>
           <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
             <span className="font-mono">{p.code}</span>
             <Badge tone="gold">{statusLabel(p.status)}</Badge>

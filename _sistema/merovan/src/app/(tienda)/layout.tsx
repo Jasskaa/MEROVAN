@@ -1,93 +1,100 @@
 import Link from "next/link";
-import { IconBag, IconMenu, IconStar } from "@/components/store/icons";
-import { Logo, Monogram } from "@/components/store/logo";
+import { IconBag, IconMenu } from "@/components/store/icons";
+import { IconSearch } from "@/components/store/icons-extra";
+import { Logo } from "@/components/store/logo";
 import { LEGAL } from "@/lib/legal";
 import { cartLines } from "@/lib/store";
 import { supabaseConfigured } from "@/lib/supabase/server";
 
 const NAV = [
-  { href: "/#coleccion", label: "Productos" },
+  { href: "/#novedades", label: "Novedades" },
+  { href: "/#productos", label: "Todo" },
   { href: "/#ofertas", label: "Ofertas" },
-  { href: "/#filosofia", label: "Cómo trabajamos" },
+  { href: "/#nosotros", label: "Nosotros" },
   { href: "/#ayuda", label: "Ayuda" },
 ];
-
-const PROMISES = ["Envío desde almacén en la UE", "14 días para devolverlo", "Pago 100 % seguro con Stripe"];
 
 export default async function StoreLayout({ children }: { children: React.ReactNode }) {
   const count = supabaseConfigured ? (await cartLines()).reduce((s, l) => s + l.quantity, 0) : 0;
   return (
     <div className="flex min-h-screen flex-col bg-ivory text-ink">
-      {/* Announcement bar */}
-      <div className="bg-ink text-[11px] uppercase tracking-[0.22em] text-champagne/90">
-        <div className="no-scrollbar mx-auto flex max-w-7xl items-center justify-center gap-6 overflow-x-auto whitespace-nowrap px-4 py-2">
-          {PROMISES.map((p, i) => (
-            <span key={p} className={`flex items-center gap-6 ${i > 0 ? "hidden sm:flex" : ""}`}>
-              {i > 0 && <IconStar className="text-brass" />}{p}
-            </span>
-          ))}
-        </div>
-      </div>
+      <p className="bg-ink px-4 py-2 text-center text-[11px] tracking-wide text-ivory/85">
+        Envío desde almacenes en la UE · 14 días para devolverlo · Pago seguro con Stripe
+      </p>
 
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-white/5 bg-ink/90 text-ivory backdrop-blur-md">
-        <div className="mx-auto grid max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-4 py-3 sm:px-6">
-          <nav className="hidden gap-8 text-[13px] tracking-wide text-ivory/80 md:flex">
-            {NAV.map((n) => <Link key={n.href} href={n.href} className="transition hover:text-champagne">{n.label}</Link>)}
-          </nav>
+      <header className="sticky top-0 z-40 border-b border-line/70 bg-ivory/85 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
           <details className="relative md:hidden">
-            <summary className="list-none cursor-pointer p-1" aria-label="Menú"><IconMenu /></summary>
-            <nav className="absolute left-0 top-10 w-56 border border-white/10 bg-ink p-4 text-sm shadow-2xl">
-              {NAV.map((n) => <Link key={n.href} href={n.href} className="block py-2 text-ivory/90">{n.label}</Link>)}
+            <summary className="list-none cursor-pointer rounded-full p-2 hover:bg-sand" aria-label="Menú"><IconMenu /></summary>
+            <nav className="absolute left-0 top-12 w-56 rounded-2xl border border-line bg-ivory p-2 shadow-xl">
+              {NAV.map((n) => <Link key={n.href} href={n.href} className="block rounded-xl px-3 py-2 text-sm hover:bg-sand">{n.label}</Link>)}
             </nav>
           </details>
-          <Link href="/" aria-label="MEROVAN, inicio" className="justify-self-center">
-            <span className="hidden sm:inline"><Logo size={28} /></span>
-            <span className="sm:hidden"><Monogram size={30} id="mv-m" /></span>
-          </Link>
-          <Link href="/carrito" className="relative justify-self-end p-1 transition hover:text-champagne" aria-label={`Carrito, ${count} productos`}>
-            <IconBag className="h-6 w-6" />
-            {count > 0 && (
-              <span className="absolute -right-1 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-champagne px-1 text-[10px] font-semibold text-ink">
-                {count}
-              </span>
-            )}
-          </Link>
+
+          <Link href="/" aria-label="MEROVAN, inicio" className="shrink-0"><Logo tone="dark" size={30} /></Link>
+
+          <nav className="mx-auto hidden items-center gap-1 rounded-full bg-sand p-1 text-[13px] md:flex">
+            {NAV.map((n, i) => (
+              <Link key={n.href} href={n.href}
+                className={`rounded-full px-4 py-1.5 transition ${i === 0 ? "bg-ink text-ivory" : "text-ink/75 hover:bg-ivory hover:text-ink"}`}>
+                {n.label}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="ml-auto flex items-center gap-2 md:ml-0">
+            <form action="/" className="hidden items-center gap-2 rounded-full bg-sand px-4 py-2 lg:flex">
+              <input name="q" placeholder="Buscar productos" aria-label="Buscar productos"
+                className="w-40 bg-transparent text-sm outline-none placeholder:text-stone" />
+              <button aria-label="Buscar"><IconSearch className="text-stone" /></button>
+            </form>
+            <Link href="/carrito" className="relative flex h-10 w-10 items-center justify-center rounded-full bg-ink text-ivory transition hover:bg-ink-soft"
+              aria-label={`Carrito, ${count} productos`}>
+              <IconBag className="h-5 w-5" />
+              {count > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-champagne px-1 text-[10px] font-semibold text-ink">{count}</span>
+              )}
+            </Link>
+          </div>
         </div>
       </header>
 
       <div className="flex-1">{children}</div>
 
-      {/* Footer */}
-      <footer className="bg-ink text-ivory/70">
-        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
-          <div>
-            <Logo size={40} />
-            <p className="mt-5 max-w-sm text-sm leading-relaxed">
-              Seleccionamos pocos productos, los probamos antes de venderlos y los enviamos desde almacenes en la Unión Europea.
-            </p>
+      <footer className="mt-10 bg-ink text-ivory/70">
+        <div className="mx-auto max-w-7xl px-4 pt-16 sm:px-6">
+          <div className="grid gap-10 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
+            <div>
+              <Logo size={34} />
+              <p className="mt-5 max-w-sm text-sm leading-relaxed">Productos útiles, probados antes de venderlos y enviados desde almacenes en la Unión Europea.</p>
+            </div>
+            <div>
+              <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-ivory">Tienda</p>
+              <ul className="space-y-2 text-sm">
+                {NAV.slice(0, 3).map((n) => <li key={n.href}><Link href={n.href} className="hover:text-ivory">{n.label}</Link></li>)}
+                <li><Link href="/carrito" className="hover:text-ivory">Carrito</Link></li>
+              </ul>
+            </div>
+            <div>
+              <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-ivory">Ayuda</p>
+              <ul className="space-y-2 text-sm">
+                <li><Link href="/#ayuda" className="hover:text-ivory">Preguntas frecuentes</Link></li>
+                <li><Link href="/legal/envios-y-devoluciones" className="hover:text-ivory">Envíos y devoluciones</Link></li>
+              </ul>
+            </div>
+            <div>
+              <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-ivory">Legal</p>
+              <ul className="space-y-2 text-sm">
+                {LEGAL.filter((l) => l.slug !== "envios-y-devoluciones").map((l) => <li key={l.slug}><Link href={`/legal/${l.slug}`} className="hover:text-ivory">{l.label}</Link></li>)}
+              </ul>
+            </div>
           </div>
-          <div>
-            <p className="mb-4 text-[11px] uppercase tracking-[0.22em] text-champagne">Tienda</p>
-            <ul className="space-y-2 text-sm">
-              <li><Link href="/#coleccion" className="hover:text-ivory">Colección</Link></li>
-              <li><Link href="/carrito" className="hover:text-ivory">Carrito</Link></li>
-              <li><Link href="/#ayuda" className="hover:text-ivory">Preguntas frecuentes</Link></li>
-            </ul>
-          </div>
-          <div>
-            <p className="mb-4 text-[11px] uppercase tracking-[0.22em] text-champagne">Legal</p>
-            <ul className="space-y-2 text-sm">
-              {LEGAL.map((l) => <li key={l.slug}><Link href={`/legal/${l.slug}`} className="hover:text-ivory">{l.label}</Link></li>)}
-            </ul>
-          </div>
+          <p aria-hidden className="mt-14 select-none text-center font-display text-[22vw] leading-[0.8] tracking-tight text-white/[0.04] md:text-[17vw]">MEROVAN</p>
         </div>
         <div className="border-t border-white/10">
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-6 text-xs sm:px-6">
-            <span>© {new Date().getFullYear()} MEROVAN. Todos los derechos reservados.</span>
-            <span className="flex items-center gap-2 text-ivory/60">
-              Pago seguro · Visa · Mastercard · Apple Pay · Google Pay
-            </span>
+            <span>© {new Date().getFullYear()} MEROVAN</span>
+            <span>Visa · Mastercard · Apple Pay · Google Pay</span>
           </div>
         </div>
       </footer>

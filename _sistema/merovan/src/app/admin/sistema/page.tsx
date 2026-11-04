@@ -86,7 +86,7 @@ export default async function SystemPage({ searchParams }: { searchParams: Promi
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="font-serif text-3xl">Sistema</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Sistema</h1>
         <p className="text-sm text-muted">Salud de las integraciones, tareas automáticas, bóveda de Obsidian y privacidad.</p>
       </header>
       <Toast ok={ok} error={error} />

@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- product media is served from Supabase Storage */
 import Link from "next/link";
-import { IconArrow, IconBox, IconChat, IconLock, IconReturn, IconShield, IconStar, IconTruck } from "@/components/store/icons";
+import { IconChat, IconLock, IconReturn, IconTruck } from "@/components/store/icons";
+import { IconArrowUpRight } from "@/components/store/icons-extra";
 import { ImagePlaceholder, ProductCard, discountPct } from "@/components/store/product-card";
 import { publishedProducts } from "@/lib/catalog";
 import { eur } from "@/lib/format";
@@ -9,19 +10,11 @@ import { supabaseConfigured } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-const TRUST = [
-  { icon: IconTruck, title: "Envío desde la UE", text: "Sin aduanas ni sorpresas." },
-  { icon: IconReturn, title: "14 días para devolverlo", text: "Si no te convence, lo devuelves." },
-  { icon: IconLock, title: "Pago seguro", text: "Con Stripe; nunca vemos tu tarjeta." },
-  { icon: IconChat, title: "Respuesta en 24 h", text: "Personas reales detrás de cada pedido." },
-];
-
-const MARQUEE = ["Novedades cada semana", "Envío desde Europa", "Productos probados uno a uno", "Devolución en 14 días", "Pago seguro", "Atención en 24 h"];
-
-const PRINCIPLES = [
-  { icon: IconBox, title: "Lo probamos antes", text: "Pedimos muestras y revisamos calidad, embalaje y plazos antes de publicar un producto." },
-  { icon: IconShield, title: "Cumplimos la normativa", text: "Fabricante y advertencias de seguridad (GPSR) en cada ficha, como exige la UE." },
-  { icon: IconReturn, title: "Sin letra pequeña", text: "Precio final con IVA, plazos realistas y devolución sencilla." },
+const PERKS = [
+  { icon: IconTruck, title: "Envío desde la UE", text: "Sin aduanas ni sorpresas" },
+  { icon: IconReturn, title: "14 días", text: "Para devolverlo si no te convence" },
+  { icon: IconLock, title: "Pago seguro", text: "Con Stripe, nunca vemos tu tarjeta" },
+  { icon: IconChat, title: "Respuesta en 24 h", text: "Personas reales, no bots" },
 ];
 
 const FAQ = [
@@ -31,159 +24,190 @@ const FAQ = [
   { q: "¿Necesito crear una cuenta?", a: "No. Compras como invitado: solo te pedimos lo necesario para enviarte el pedido." },
 ];
 
+function PillButton({ href, children, dark = false }: { href: string; children: React.ReactNode; dark?: boolean }) {
+  return (
+    <Link href={href} className={`group inline-flex items-center gap-3 rounded-full py-1.5 pl-5 pr-1.5 text-sm font-medium transition ${dark ? "bg-ink text-ivory hover:bg-ink-soft" : "bg-ivory text-ink hover:bg-white"}`}>
+      {children}
+      <span className={`flex h-8 w-8 items-center justify-center rounded-full transition group-hover:rotate-45 ${dark ? "bg-ivory text-ink" : "bg-ink text-ivory"}`}>
+        <IconArrowUpRight className="h-4 w-4" />
+      </span>
+    </Link>
+  );
+}
+
 export default async function StoreHome({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
-  if (supabaseConfigured) await trackView("/", null, await searchParams);
-  const products = await publishedProducts();
-  const [featured, ...rest] = products;
-  const deals = products.filter((p) => discountPct(p.price_cents, p.compare_at_cents));
+  const params = await searchParams;
+  if (supabaseConfigured) await trackView("/", null, params);
+  const q = params.q?.trim();
+  const all = await publishedProducts();
+  const results = q ? await publishedProducts(q) : all;
+  const [featured, ...others] = all;
+  const latest = all.slice(0, 4);
+  const deals = all.filter((p) => discountPct(p.price_cents, p.compare_at_cents));
 
   return (
-    <>
-      {/* Hero: product showcase */}
-      <section className="relative overflow-hidden bg-ink text-ivory">
-        <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_75%_40%,rgba(217,188,134,0.16),transparent_55%)]" />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-14 sm:px-6 lg:grid-cols-[1fr_1.05fr] lg:py-20">
-          <div>
-            <p className="animate-rise flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-champagne">
-              <IconStar className="text-brass" /> Nueva selección
-            </p>
-            <h1 className="animate-rise mt-5 font-serif text-5xl leading-[1.02] [animation-delay:100ms] sm:text-7xl">
-              Lo útil,<br /><em className="text-champagne">bien hecho.</em>
-            </h1>
-            <p className="animate-rise mt-6 max-w-md text-base leading-relaxed text-ivory/70 [animation-delay:200ms] sm:text-lg">
-              Productos para el día a día que hemos probado uno a uno. Envío desde Europa y devolución sencilla.
-            </p>
-            <div className="animate-rise mt-9 flex flex-wrap gap-3 [animation-delay:300ms]">
-              <Link href={featured ? `/p/${featured.slug}` : "#coleccion"} className="group inline-flex items-center gap-2 bg-champagne px-7 py-4 text-sm font-medium uppercase tracking-[0.18em] text-ink transition hover:bg-[#f0e3cb]">
-                Comprar ahora <IconArrow className="h-4 w-4 transition group-hover:translate-x-1" />
-              </Link>
-              <Link href="#coleccion" className="inline-flex items-center border border-ivory/25 px-7 py-4 text-sm uppercase tracking-[0.18em] text-ivory/90 transition hover:border-champagne hover:text-champagne">
-                Ver todo
-              </Link>
-            </div>
-            <dl className="animate-rise mt-12 flex gap-10 border-t border-white/10 pt-6 text-sm [animation-delay:400ms]">
-              <div><dt className="text-ivory/50">Productos</dt><dd className="mt-1 font-serif text-3xl text-champagne">{products.length}</dd></div>
-              <div><dt className="text-ivory/50">Devolución</dt><dd className="mt-1 font-serif text-3xl text-champagne">14 días</dd></div>
-              <div><dt className="text-ivory/50">Envío desde</dt><dd className="mt-1 font-serif text-3xl text-champagne">UE</dd></div>
-            </dl>
-          </div>
+    <div className="mx-auto max-w-7xl px-3 sm:px-6">
+      {/* Hero: giant brand word behind the featured product */}
+      <section className="relative mt-3 overflow-hidden rounded-[28px] bg-ink text-ivory sm:mt-5">
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_70%,rgba(229,213,188,0.14),transparent_60%)]" />
+        <p aria-hidden className="relative select-none pt-6 text-center font-display text-[24vw] leading-[0.82] tracking-tight text-ivory sm:pt-8 lg:text-[15.5rem]">
+          MEROVAN
+        </p>
 
+        {featured && (
+          <Link href={`/p/${featured.slug}`} className="group relative mx-auto -mt-[5vw] block w-[58%] max-w-md sm:-mt-[10vw] sm:w-[46%] lg:-mt-36">
+            <div className="aspect-square overflow-hidden rounded-3xl shadow-[0_40px_80px_-20px_rgba(0,0,0,0.6)]">
+              {featured.images[0]
+                ? <img src={featured.images[0]} alt={featured.name} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+                : <ImagePlaceholder dark className="h-full w-full !bg-ink-soft" />}
+            </div>
+          </Link>
+        )}
+
+        <div className="relative grid gap-8 px-5 pb-8 pt-8 sm:px-10 lg:grid-cols-[1fr_auto_1fr] lg:items-end">
+          <div className="max-w-sm">
+            <p className="text-sm leading-relaxed text-ivory/70">
+              Productos para el día a día, probados uno a uno y enviados desde Europa. Sin ruido, sin sorpresas.
+            </p>
+            <div className="mt-5"><PillButton href={featured ? `/p/${featured.slug}` : "#productos"}>Comprar ahora</PillButton></div>
+          </div>
           {featured && (
-            <Link href={`/p/${featured.slug}`} className="group animate-rise relative block [animation-delay:200ms]">
-              <div className="relative aspect-[4/5] overflow-hidden rounded-sm bg-ink-soft sm:aspect-[5/5] lg:aspect-[4/5]">
-                {featured.images[0]
-                  ? <img src={featured.images[0]} alt={featured.name} className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]" />
-                  : <ImagePlaceholder className="h-full w-full" />}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/90 via-ink/40 to-transparent p-6 pt-24">
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-champagne">Destacado</p>
-                  <div className="mt-2 flex items-end justify-between gap-4">
-                    <p className="font-serif text-3xl leading-tight sm:text-4xl">{featured.name}</p>
-                    {featured.price_cents != null && <p className="shrink-0 text-xl tabular-nums">{eur(featured.price_cents)}</p>}
-                  </div>
-                  <p className="mt-4 inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-ivory/80 group-hover:text-champagne">
-                    Ver producto <IconArrow className="h-4 w-4 transition group-hover:translate-x-1" />
-                  </p>
-                </div>
-              </div>
-              {rest[0] && (
-                <div className="absolute -bottom-6 -left-6 hidden w-40 border-4 border-ink bg-ink shadow-2xl lg:block">
-                  <div className="aspect-square overflow-hidden">
-                    {rest[0].images[0] ? <img src={rest[0].images[0]} alt="" className="h-full w-full object-cover" /> : <ImagePlaceholder className="h-full w-full" />}
-                  </div>
-                  <p className="truncate px-2 py-2 text-xs">{rest[0].name}</p>
-                </div>
-              )}
-            </Link>
+            <div className="text-center">
+              <p className="text-xs uppercase tracking-[0.25em] text-champagne">Destacado</p>
+              <p className="mt-1 text-lg font-medium">{featured.name}</p>
+              {featured.price_cents != null && <p className="text-sm tabular-nums text-ivory/70">{eur(featured.price_cents)}</p>}
+            </div>
+          )}
+          {others.length > 0 && (
+            <div className="flex gap-3 lg:justify-end">
+              {others.slice(0, 3).map((p) => (
+                <Link key={p.code} href={`/p/${p.slug}`} title={p.name} className="h-20 w-20 overflow-hidden rounded-2xl border border-white/10 bg-white/5 transition hover:border-champagne sm:h-24 sm:w-24">
+                  {p.images[0] ? <img src={p.images[0]} alt={p.name} className="h-full w-full object-cover" /> : <ImagePlaceholder dark compact className="h-full w-full" />}
+                </Link>
+              ))}
+            </div>
           )}
         </div>
       </section>
 
-      {/* Marquee */}
-      <div className="overflow-hidden border-y border-line bg-champagne/40 py-3" aria-hidden>
-        <div className="animate-marquee flex w-max gap-10 whitespace-nowrap text-[12px] uppercase tracking-[0.3em] text-ink/70">
-          {[...MARQUEE, ...MARQUEE].map((m, i) => <span key={i} className="flex items-center gap-10">{m}<IconStar className="text-brass" /></span>)}
+      {/* Intro + real facts */}
+      <section className="grid gap-10 px-2 py-16 sm:py-20 lg:grid-cols-2 lg:items-end">
+        <h1 className="text-4xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
+          Descubre lo útil,<br /><span className="text-stone">sin complicaciones.</span>
+        </h1>
+        <div>
+          <p className="max-w-md text-stone">Elegimos pocos productos y los probamos antes de venderlos. Si algo no te convence, tienes 14 días para devolverlo.</p>
+          <dl className="mt-8 flex flex-wrap gap-x-12 gap-y-4">
+            <div><dd className="text-4xl font-semibold tabular-nums">{all.length}</dd><dt className="text-xs text-stone">productos seleccionados</dt></div>
+            <div><dd className="text-4xl font-semibold">14</dd><dt className="text-xs text-stone">días de devolución</dt></div>
+            <div><dd className="text-4xl font-semibold">UE</dd><dt className="text-xs text-stone">envío desde Europa</dt></div>
+          </dl>
         </div>
-      </div>
-
-      {/* Collection */}
-      <section id="coleccion" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-20 sm:px-6 sm:py-24">
-        <div className="mb-12 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.28em] text-brass">Catálogo</p>
-            <h2 className="mt-3 font-serif text-4xl sm:text-5xl">Todos los productos</h2>
-          </div>
-          <p className="max-w-sm text-sm leading-relaxed text-stone">Cada producto ha pasado nuestra revisión de calidad, proveedor y seguridad antes de llegar aquí.</p>
-        </div>
-        {products.length === 0 ? (
-          <p className="border border-line py-20 text-center text-stone">Estamos preparando el catálogo. Vuelve pronto.</p>
-        ) : (
-          <div className="grid gap-x-6 gap-y-14 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {products.map((p, i) => <ProductCard key={p.code} p={p} priority={i < 4} />)}
-          </div>
-        )}
       </section>
 
-      {deals.length > 0 && (
-        <section id="ofertas" className="scroll-mt-24 bg-ink py-20 text-ivory">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <p className="text-[11px] uppercase tracking-[0.28em] text-champagne">Por tiempo limitado</p>
-            <h2 className="mt-3 font-serif text-4xl sm:text-5xl">Ofertas</h2>
-            <div className="mt-10 grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-4 [&_h3]:text-ivory [&_p]:text-ivory">
-              {deals.map((p) => <ProductCard key={p.code} p={p} />)}
-            </div>
+      {/* Latest */}
+      {!q && latest.length > 0 && (
+        <section id="novedades" className="scroll-mt-24 pb-20">
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-4 px-1">
+            <h2 className="font-display text-5xl uppercase leading-none sm:text-7xl">Novedades</h2>
+            <PillButton href="#productos" dark>Ver todo</PillButton>
+          </div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4">
+            {latest.map((p, i) => <ProductCard key={p.code} p={p} priority={i < 4} />)}
           </div>
         </section>
       )}
 
-      {/* Trust */}
-      <section className="border-y border-line bg-ivory">
-        <ul className="mx-auto grid max-w-7xl grid-cols-2 gap-px bg-line lg:grid-cols-4">
-          {TRUST.map(({ icon: Icon, title, text }) => (
-            <li key={title} className="flex items-start gap-3 bg-ivory px-5 py-8 sm:px-8">
-              <Icon className="mt-0.5 h-6 w-6 shrink-0 text-brass" />
-              <div><p className="text-sm font-medium">{title}</p><p className="mt-0.5 text-xs leading-relaxed text-stone">{text}</p></div>
-            </li>
-          ))}
-        </ul>
+      {/* Split promo */}
+      {featured && !q && (
+        <section className="grid overflow-hidden rounded-[28px] bg-ink text-ivory lg:grid-cols-2">
+          <div className="flex flex-col justify-between gap-10 p-8 sm:p-12">
+            <div>
+              <h2 className="font-display text-5xl uppercase leading-[0.95] sm:text-6xl">Todo lo que necesitas,<br /><span className="text-champagne">nada que sobre</span></h2>
+              <p className="mt-5 max-w-sm text-sm leading-relaxed text-ivory/70">Cada producto pasa nuestra revisión de calidad, proveedor y seguridad antes de llegar a la tienda.</p>
+            </div>
+            <div className="flex flex-wrap items-end gap-3">
+              {all.slice(0, 2).map((p) => (
+                <Link key={p.code} href={`/p/${p.slug}`} className="h-24 w-24 overflow-hidden rounded-2xl bg-white/5">
+                  {p.images[0] ? <img src={p.images[0]} alt={p.name} className="h-full w-full object-cover" /> : <ImagePlaceholder dark compact className="h-full w-full" />}
+                </Link>
+              ))}
+              <div className="ml-auto"><PillButton href={`/p/${featured.slug}`}>Descubrir</PillButton></div>
+            </div>
+          </div>
+          <div className="relative min-h-80 bg-ink-soft">
+            {(featured.images[1] ?? featured.images[0])
+              ? <img src={featured.images[1] ?? featured.images[0]} alt={featured.name} className="absolute inset-0 h-full w-full object-cover" />
+              : <ImagePlaceholder dark className="absolute inset-0" />}
+          </div>
+        </section>
+      )}
+
+      {/* All products / search results */}
+      <section id="productos" className="scroll-mt-24 py-20">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4 px-1">
+          <h2 className="font-display text-5xl uppercase leading-none sm:text-7xl">{q ? `«${q}»` : "Todos los productos"}</h2>
+          <form action="/#productos" className="flex items-center gap-2 rounded-full bg-sand px-4 py-2">
+            <input name="q" defaultValue={q} placeholder="Buscar productos" aria-label="Buscar productos" className="w-44 bg-transparent text-sm outline-none placeholder:text-stone" />
+            {q && <Link href="/#productos" className="text-xs text-stone hover:text-ink">Limpiar</Link>}
+          </form>
+        </div>
+        {results.length === 0 ? (
+          <p className="rounded-2xl bg-sand py-20 text-center text-stone">{q ? "No hay productos que coincidan." : "Estamos preparando el catálogo. Vuelve pronto."}</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4">
+            {results.map((p) => <ProductCard key={p.code} p={p} />)}
+          </div>
+        )}
       </section>
 
-      {/* Philosophy */}
-      <section id="filosofia" className="scroll-mt-24 bg-sand">
-        <div className="mx-auto grid max-w-7xl gap-12 px-4 py-20 sm:px-6 sm:py-24 lg:grid-cols-[1fr_1.3fr]">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.28em] text-brass">Cómo trabajamos</p>
-            <h2 className="mt-3 font-serif text-4xl leading-tight sm:text-5xl">Menos catálogo, <em className="text-brass">más criterio</em></h2>
-            <p className="mt-6 max-w-md leading-relaxed text-stone">Elegimos pocos productos, los comprobamos y solo los publicamos cuando estamos seguros de que merecen la pena.</p>
+      {deals.length > 0 && !q && (
+        <section id="ofertas" className="scroll-mt-24 pb-20">
+          <h2 className="mb-8 px-1 font-display text-5xl uppercase leading-none sm:text-7xl">Ofertas</h2>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4">{deals.map((p) => <ProductCard key={p.code} p={p} />)}</div>
+        </section>
+      )}
+
+      {/* Perks */}
+      <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {PERKS.map(({ icon: Icon, title, text }) => (
+          <li key={title} className="rounded-2xl bg-sand p-5">
+            <Icon className="h-6 w-6" />
+            <p className="mt-6 font-semibold">{title}</p>
+            <p className="text-sm text-stone">{text}</p>
+          </li>
+        ))}
+      </ul>
+
+      {/* About */}
+      <section id="nosotros" className="scroll-mt-24 py-20 sm:py-28">
+        <p aria-hidden className="select-none text-center font-display text-[18vw] uppercase leading-none tracking-tight text-ink/[0.05] lg:text-[11rem]">Bienvenido</p>
+        <div className="mt-8 grid gap-6 border-t border-line pt-8 text-sm sm:grid-cols-[120px_200px_1fr]">
+          <span className="text-stone">001</span>
+          <span className="font-medium">Sobre MEROVAN</span>
+          <div className="max-w-xl space-y-4 leading-relaxed text-ink/80">
+            <p>MEROVAN es una tienda online con una idea sencilla: pocos productos, bien elegidos. Antes de publicar cualquier artículo pedimos muestras y comprobamos su calidad, el embalaje y los plazos de entrega.</p>
+            <p>Trabajamos con almacenes en la Unión Europea para que tu pedido llegue sin aduanas, con seguimiento y con la garantía de devolución de 14 días.</p>
           </div>
-          <ol className="grid gap-px bg-line sm:grid-cols-3 lg:grid-cols-1">
-            {PRINCIPLES.map(({ icon: Icon, title, text }, i) => (
-              <li key={title} className="flex gap-5 bg-sand p-6 sm:p-8">
-                <span className="font-serif text-3xl text-brass/70">0{i + 1}</span>
-                <div>
-                  <p className="flex items-center gap-2 font-medium"><Icon className="h-5 w-5 text-brass" />{title}</p>
-                  <p className="mt-2 text-sm leading-relaxed text-stone">{text}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
         </div>
       </section>
 
       {/* FAQ */}
-      <section id="ayuda" className="mx-auto max-w-3xl scroll-mt-24 px-4 py-20 sm:py-24">
-        <p className="text-center text-[11px] uppercase tracking-[0.28em] text-brass">Ayuda</p>
-        <h2 className="mt-3 text-center font-serif text-4xl sm:text-5xl">Preguntas frecuentes</h2>
-        <div className="mt-12 divide-y divide-line border-y border-line">
-          {FAQ.map((f) => (
-            <details key={f.q} className="group py-5">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left font-medium">
-                {f.q}<span className="text-xl text-brass transition group-open:rotate-45">+</span>
-              </summary>
-              <p className="mt-3 leading-relaxed text-stone">{f.a}</p>
-            </details>
-          ))}
+      <section id="ayuda" className="scroll-mt-24 pb-20">
+        <div className="grid gap-10 lg:grid-cols-[1fr_1.4fr]">
+          <h2 className="font-display text-5xl uppercase leading-none sm:text-7xl">Preguntas<br />frecuentes</h2>
+          <div className="space-y-3">
+            {FAQ.map((f) => (
+              <details key={f.q} className="group rounded-2xl bg-sand px-6 py-5">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium">
+                  {f.q}<span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ink text-ivory transition group-open:rotate-45">+</span>
+                </summary>
+                <p className="mt-3 text-sm leading-relaxed text-stone">{f.a}</p>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
-    </>
+    </div>
   );
 }

@@ -38,7 +38,7 @@ export function Logo({ tone = "light", size = 32, className = "" }: { tone?: "li
   return (
     <span className={`inline-flex items-center gap-2 ${className}`}>
       <Monogram size={size} id={`mv-${tone}-${size}`} />
-      <span className={`font-serif font-semibold tracking-[0.34em] ${tone === "light" ? "text-[#F3EBDD]" : "text-ink"}`} style={{ fontSize: size * 0.52 }}>
+      <span className={`font-display tracking-[0.14em] ${tone === "light" ? "text-[#F3EBDD]" : "text-ink"}`} style={{ fontSize: size * 0.62 }}>
         MEROVAN
       </span>
     </span>
