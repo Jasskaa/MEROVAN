@@ -174,4 +174,27 @@ export class SupabaseStore implements AgentStore {
       return { product: r.product?.code ?? "", supplier: r.supplier?.name ?? "", warehouse_country: r.supplier?.warehouse_country ?? null, role: r.role, unit_cost_cents: r.unit_cost_cents, shipping_cents: r.shipping_cents, promised_days: r.promised_days, measured_days: r.measured_days, reliability: r.supplier?.reliability ?? null };
     });
   }
+
+  async getListing(code: string) {
+    const { data: p } = await this.db.from("products")
+      .select("code, name, description, bullets, price_cents, compare_at_cents, publish_status, gpsr_manufacturer, gpsr_address, gpsr_contact, gpsr_warnings, legal_red_flag, product_variants(sku, stock), product_media(kind)")
+      .eq("code", code).maybeSingle();
+    if (!p) return null;
+    const media = (p.product_media ?? []) as { kind: string }[];
+    return {
+      code: p.code, publishStatus: p.publish_status, name: p.name, description: p.description ?? "", bullets: p.bullets ?? [],
+      priceCents: p.price_cents, compareAtCents: p.compare_at_cents, gpsrManufacturer: p.gpsr_manufacturer, gpsrAddress: p.gpsr_address,
+      gpsrContact: p.gpsr_contact, gpsrWarnings: p.gpsr_warnings, legalRedFlag: p.legal_red_flag,
+      imageCount: media.filter((m) => m.kind === "image").length, videoCount: media.filter((m) => m.kind === "video").length,
+      variants: (p.product_variants ?? []) as { sku: string; stock: number }[],
+    };
+  }
+  async saveListingText(code: string, t: { description: string; bullets: string[]; gpsr_warnings?: string }) {
+    const { error } = await this.db.from("products").update(t).eq("code", code).neq("publish_status", "publicado");
+    if (error) throw new Error(error.message);
+  }
+  async setPublished(code: string, priceCents?: number) {
+    const { error } = await this.db.from("products").update({ publish_status: "publicado", ...(priceCents != null ? { price_cents: priceCents } : {}) }).eq("code", code);
+    if (error) throw new Error(error.message);
+  }
 }

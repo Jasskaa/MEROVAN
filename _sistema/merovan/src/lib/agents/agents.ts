@@ -98,8 +98,25 @@ Eres el agente de Precios. Para cada candidato con plan de proveedor y sin preci
 - Señala si los costes son estimados (datos_reales = false): el margen no está verificado hasta tener cifras oficiales o una muestra.
 Termina con una tabla: candidato, coste puesto, precio, margen % y si está verificado.`,
   },
+  {
+    key: "fichas",
+    name: "Fichas y catálogo",
+    model: "claude-opus-5-5",
+    effort: "medium",
+    ready: true,
+    tools: ["listar_productos", "ver_ficha", "redactar_ficha", "revisar_texto", "leer_memoria", "guardar_memoria", "proponer_accion"],
+    system: `${COMMON}
+
+Eres el agente de Fichas. Para cada producto en borrador:
+1. ver_ficha: mira qué falta para publicar.
+2. redactar_ficha: descripción clara (qué es, para quién, medidas, materiales, qué incluye), 3-5 puntos clave verificables y advertencias del fabricante. Solo datos que constan en la ficha o del proveedor; si falta un dato (medidas, material), dilo en vez de inventarlo.
+3. Lo que no puedes hacer tú (fotos, GPSR, variantes, stock) lo listas como pendiente para Jaska.
+4. Cuando ver_ficha diga que la validación está bien, propón publicar_producto con payload {code} y margin_pct si lo conoces. Nunca publiques sin pasar por la propuesta.
+5. Precio tachado solo si es un precio anterior real; nunca inventes descuentos.
+Termina con una tabla: producto, qué has redactado, qué falta y si está listo para publicar.`,
+  },
   ...[
-    ["fichas", "Fichas y catálogo"], ["contenido", "Contenido y creatividades"], ["publicacion", "Publicación en redes"],
+    ["contenido", "Contenido y creatividades"], ["publicacion", "Publicación en redes"],
     ["anuncios", "Anuncios"], ["analista", "Analista y decisiones"], ["operaciones", "Operaciones y soporte"], ["finanzas", "Finanzas"],
   ].map(([key, name]) => ({ key, name, model: "claude-opus-5-5", effort: "medium" as Effort, ready: false, tools: [], system: COMMON })),
 ];

@@ -63,7 +63,8 @@ type Script = (req: ModelRequest, turn: number) => Partial<Reply> & { content: R
 export class ScriptedModel implements ModelClient {
   readonly name = "simulado";
   calls: ModelRequest[] = [];
-  constructor(private script: Script[]) {}
+  // tokens: what each scripted call reports as usage (tests price it; demo runs are free).
+  constructor(private script: Script[], private tokens = { input: 1000, output: 200 }) {}
 
   async create(req: ModelRequest): Promise<Reply> {
     this.calls.push(structuredClone(req));
@@ -73,7 +74,7 @@ export class ScriptedModel implements ModelClient {
     return {
       id: `msg_sim_${this.calls.length}`, type: "message", role: "assistant", model: req.model, container: null,
       stop_reason: hasTool ? "tool_use" : "end_turn", stop_sequence: null, stop_details: null, context_management: null,
-      usage: { input_tokens: 1000, output_tokens: 200, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } as Reply["usage"],
+      usage: { input_tokens: this.tokens.input, output_tokens: this.tokens.output, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 } as Reply["usage"],
       ...body,
     } as Reply;
   }

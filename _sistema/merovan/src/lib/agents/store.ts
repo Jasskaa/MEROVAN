@@ -1,6 +1,7 @@
 // Data port for the agent system. The runtime and tools only talk to this interface, so the
 // same code runs against Supabase (production) and an in-memory store (tests and evaluations).
 import type { Guardrails, Usage } from "./policy";
+import type { ListingInput } from "@/lib/domain/listing";
 import type { MarginDefaults } from "./research";
 
 export interface ProposalRow {
@@ -69,6 +70,10 @@ export interface AgentStore {
   updateCandidate(id: string, patch: Partial<CandidateRow>): Promise<void>;
   listResearch(): Promise<ResearchNiche[]>;
   listSupplierOffers(): Promise<SupplierOfferView[]>;
+
+  getListing(code: string): Promise<(ListingInput & { code: string; publishStatus: string; gpsrWarnings: string | null }) | null>;
+  saveListingText(code: string, t: { description: string; bullets: string[]; gpsr_warnings?: string }): Promise<void>;
+  setPublished(code: string, priceCents?: number): Promise<void>;
 }
 
 export const DEFAULT_MARGIN: MarginDefaults = {
@@ -173,4 +178,26 @@ export class MemoryStore implements AgentStore {
   async updateCandidate(id: string, patch: Partial<CandidateRow>) { const c = this.candidates.find((x) => x.id === id); if (c) Object.assign(c, patch); }
   async listResearch() { return this.niches.map((n) => ({ ...n, candidates: this.candidates.filter((c) => c.niche_id === n.id) })); }
   async listSupplierOffers() { return [...this.offers]; }
+
+  async getListing(code: string) {
+    const p = this.products.find((x) => x.code === code);
+    if (!p) return null;
+    const l = (p.listing ?? {}) as Partial<ListingInput>;
+    return {
+      code, publishStatus: p.publish_status, name: p.name, description: String(p.description ?? ""), bullets: (p.bullets as string[]) ?? [],
+      priceCents: p.price_cents, compareAtCents: null, gpsrManufacturer: null, gpsrAddress: null, gpsrContact: null, gpsrWarnings: null,
+      legalRedFlag: false, imageCount: 0, videoCount: 0, variants: [], ...l,
+    };
+  }
+  async saveListingText(code: string, t: { description: string; bullets: string[] }) {
+    const p = this.products.find((x) => x.code === code);
+    if (!p) throw new Error("Producto no encontrado");
+    p.description = t.description; p.bullets = t.bullets;
+  }
+  async setPublished(code: string, priceCents?: number) {
+    const p = this.products.find((x) => x.code === code);
+    if (!p) throw new Error("Producto no encontrado");
+    p.publish_status = "publicado";
+    if (priceCents != null) p.price_cents = priceCents;
+  }
 }

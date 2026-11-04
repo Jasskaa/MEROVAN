@@ -2,6 +2,7 @@
 // Tools never decide on autonomy: anything that acts goes through propose() and the policy engine.
 import { z } from "zod";
 import { ACTION_TYPES } from "./policy";
+import { validateListing } from "@/lib/domain/listing";
 import { CRITERIA } from "@/lib/domain/product";
 import { propose } from "./pipeline";
 import { type Offer, rankOffers, recommendPrice, scoreCandidate } from "./research";
@@ -242,6 +243,43 @@ export const TOOLS: AgentTool[] = [
       const r = recommendPrice(c.landed_cents, d, { minMarginPct: g.min_margin_pct ?? 25, priceMinCents: g.price_min_cents ?? 0, priceMaxCents: g.price_max_cents ?? 0 });
       await store.updateCandidate(c.id, { price_cents: r.price_cents, margin_pct: r.margin_pct, margin_cents: r.margin_cents, break_even_roas: r.break_even_roas, price_reasons: r.reasons });
       return { ...r, datos_reales: c.real_data };
+    },
+  },
+  {
+    name: "ver_ficha",
+    description: "Fichas: estado de la ficha de un producto (textos, precio, GPSR, fotos, variantes) y su validación para publicar: errores que bloquean y avisos.",
+    schema: z.object({ code: z.string().regex(/^PRD-\d{4}$/) }),
+    jsonSchema: obj({ code: { type: "string", description: "Código PRD-0001" } }, ["code"]),
+    externalData: true,
+    run: async ({ store }, i) => {
+      const l = await store.getListing(i.code);
+      if (!l) throw new Error("Producto no encontrado");
+      return { ficha: l, validacion: validateListing(l) };
+    },
+  },
+  {
+    name: "redactar_ficha",
+    description:
+      "Fichas: escribe la descripción, 3-5 puntos clave y las advertencias de un producto NO publicado. Se rechaza si contiene claims prohibidos. " +
+      "Para cambiar la ficha de un producto publicado, no uses esto: propón la acción.",
+    schema: z.object({
+      code: z.string().regex(/^PRD-\d{4}$/), description: z.string().min(40).max(3000),
+      bullets: z.array(z.string().min(3).max(200)).min(3).max(5), gpsr_warnings: z.string().max(1000).optional(),
+    }),
+    jsonSchema: obj({
+      code: { type: "string" }, description: { type: "string" }, bullets: { type: "array", items: { type: "string" } },
+      gpsr_warnings: { type: "string", description: "Advertencias de seguridad del fabricante, si las hay" },
+    }, ["code", "description", "bullets"]),
+    run: async ({ store }, i) => {
+      const l = await store.getListing(i.code);
+      if (!l) throw new Error("Producto no encontrado");
+      if (l.publishStatus === "publicado") throw new Error("El producto está publicado: propón el cambio con proponer_accion");
+      const { deterministicReview } = await import("./compliance");
+      const issues = deterministicReview({ text: [i.description, ...i.bullets, i.gpsr_warnings ?? ""].join("\n") });
+      if (issues.length) throw new Error(`Texto rechazado: ${issues.join("; ")}`);
+      await store.saveListingText(i.code, { description: i.description, bullets: i.bullets, ...(i.gpsr_warnings ? { gpsr_warnings: i.gpsr_warnings } : {}) });
+      const after = await store.getListing(i.code);
+      return { guardado: true, validacion: validateListing(after!) };
     },
   },
 ];

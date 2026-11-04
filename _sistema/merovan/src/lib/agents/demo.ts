@@ -1,6 +1,11 @@
 // Scripted runs used while there is no AI key: they exercise the real tools and database so the
 // whole chain can be tested end to end. Every row they create is marked demo and labelled "(ejemplo)".
-import { type ModelRequest, ScriptedModel, callTool, say } from "./model";
+import { type ModelRequest, ScriptedModel as Scripted, callTool, say } from "./model";
+
+// Demo runs cost nothing: they report zero tokens so they never eat into the AI budget.
+class ScriptedModel extends Scripted {
+  constructor(script: ConstructorParameters<typeof Scripted>[0]) { super(script, { input: 0, output: 0 }); }
+}
 
 /** JSON outputs of the tool results in the last user message. */
 function lastResults(req: ModelRequest): unknown[] {
@@ -79,6 +84,20 @@ export function demoModel(agent: string) {
           return { content: todo.length ? todo.map((c) => callTool("guardar_precio", { candidate_id: c.id })) : [say("No hay candidatos con plan de proveedor pendientes de precio.")] };
         },
         () => ({ content: [say("Prueba sin IA: precios calculados por el sistema con el margen mínimo de Límites. Margen no verificado: las cifras de proveedor son de ejemplo.")] }),
+      ]);
+    case "fichas":
+      // Read only: without AI it does not write texts into real products.
+      return new ScriptedModel([
+        () => ({ content: [callTool("listar_productos", {})] }),
+        (req) => {
+          const drafts = ((lastResults(req)[0] ?? []) as { code: string; publish_status: string }[]).filter((p) => p.publish_status !== "publicado").slice(0, 3);
+          return { content: drafts.length ? drafts.map((p) => callTool("ver_ficha", { code: p.code })) : [say("No hay productos en borrador.")] };
+        },
+        (req) => {
+          const lines = (lastResults(req) as { ficha: { code: string; name: string }; validacion: { ok: boolean; errors: string[] } }[])
+            .map((r) => `- ${r.ficha.code} ${r.ficha.name}: ${r.validacion.ok ? "lista para proponer su publicación" : `falta: ${r.validacion.errors.join(" ")}`}`);
+          return { content: [say(`Prueba sin IA: he revisado las fichas en borrador sin modificarlas.\n${lines.join("\n") || "Sin fichas que revisar."}`)] };
+        },
       ]);
     default:
       return new ScriptedModel([

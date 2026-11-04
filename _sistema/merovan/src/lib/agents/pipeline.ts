@@ -1,5 +1,6 @@
 // Proposal pipeline: agent proposes → compliance (veto) → autonomy decision → (execute | simulate |
 // wait for approval | draft | block). Approval and execution go through the same checks again.
+import { validateListing } from "@/lib/domain/listing";
 import { deterministicReview, publishableText } from "./compliance";
 import { type ActionPayload, actionType, evaluateAction } from "./policy";
 import type { AgentStore, ProposalRow } from "./store";
@@ -18,7 +19,7 @@ export interface ProposeInput {
 
 const STATUS_BY_DECISION = { ejecutar: "aprobada", simular: "aprobada", aprobacion: "pendiente", borrador: "pendiente", bloquear: "bloqueada" } as const;
 
-/** Executors per action type. Phase 1: only internal drafts are real; the rest are adapters not yet connected. */
+/** Executors per action type. Own store actions are real; third-party adapters arrive with their integrations. */
 async function execute(store: AgentStore, p: ProposalRow, dryRun: boolean) {
   const t = actionType(p.action_type);
   if (t?.external && dryRun) return { simulado: true, detalle: `Simulación: se habría ejecutado «${p.title}»` };
@@ -28,6 +29,19 @@ async function execute(store: AgentStore, p: ProposalRow, dryRun: boolean) {
       price_cents: typeof p.payload.price_cents === "number" ? p.payload.price_cents : undefined,
     });
     return { creado: code };
+  }
+  if (p.action_type === "publicar_producto" || p.action_type === "cambiar_precio") {
+    // Own store: re-validate the live listing at execution time, not at proposal time.
+    const code = String(p.payload.code ?? "");
+    const l = await store.getListing(code);
+    if (!l) throw new Error(`Producto ${code || "(sin código)"} no encontrado`);
+    const newPrice = p.action_type === "cambiar_precio" ? Number(p.payload.new_price_cents) : undefined;
+    if (p.action_type === "cambiar_precio" && (!Number.isInteger(newPrice) || newPrice! <= 0)) throw new Error("Precio nuevo no válido");
+    if (p.action_type === "cambiar_precio" && l.publishStatus !== "publicado") throw new Error("El producto no está publicado");
+    const v = validateListing({ ...l, priceCents: newPrice ?? l.priceCents });
+    if (!v.ok) throw new Error(`La ficha no pasa la validación: ${v.errors.join(" ")}`);
+    await store.setPublished(code, newPrice);
+    return p.action_type === "publicar_producto" ? { publicado: code } : { precio: newPrice, producto: code };
   }
   throw new Error(`Integración no conectada para «${t?.label ?? p.action_type}»: hazlo a mano y márcalo, o conecta la integración`);
 }
