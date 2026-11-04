@@ -41,4 +41,5 @@ views:
 |---|---|
 | [[PRD-0001 Organizador de cables (EJEMPLO)]] | En test |
 | [[PRD-0002 Lámpara de lectura recargable]] | Candidato |
+| [[PRD-0003 SyncParty]] | Idea |
 <!-- merovan:auto:end -->

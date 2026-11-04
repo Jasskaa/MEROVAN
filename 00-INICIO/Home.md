@@ -19,6 +19,7 @@ En una frase: punto de entrada a la bóveda de MEROVAN, la memoria y el manual d
 - [[Convenciones]]: nombres, IDs, frontmatter, estados y etiquetas.
 - [[Cuadro de mando]]: productos por estado, decisiones pendientes, muestras e incidencias.
 - [[Bandeja de entrada]]: lo que aún no sabes dónde va.
+- [[Configuración pendiente]]: lo que hay que configurar para que los agentes de IA trabajen (generada por la app).
 
 ## Áreas
 | Carpeta | Qué contiene |

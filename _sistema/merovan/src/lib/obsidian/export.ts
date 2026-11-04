@@ -214,6 +214,26 @@ export async function exportToVault(supabase: Supabase, today = new Date().toISO
     "\n# Historial de decisiones\n\nEn una frase: qué recomendó el motor y qué decidimos, para aprender qué productos y ángulos funcionan.\n\n## Aprendizajes\n");
   write(root, histRel, hist.text, histExisting, r);
 
+  // ---------- Configuration centre mirror ----------
+  const { data: config } = await supabase.from("config_items").select("*").order("priority");
+  if (config?.length) {
+    const cfgRel = "00-INICIO/Configuración pendiente.md";
+    const cfgExisting = read(root, cfgRel);
+    const icon: Record<string, string> = { pendiente: "☐", en_curso: "◐", hecho: "☑", bloqueado: "⛔" };
+    const cfgAuto = [
+      `_Espejo del Centro de configuración del panel (${config.filter((c) => c.status === "hecho").length}/${config.length} hechos). Las claves nunca se escriben aquí._`, "",
+      ...config.flatMap((c) => [
+        `### ${icon[c.status] ?? "☐"} ${c.priority}. ${c.title}${c.external_wait ? " · gestión externa" : ""}`,
+        `${c.why}`, "",
+        ...c.steps.map((s: string, i: number) => `${i + 1}. ${s}`), "",
+        `- **Tiempo:** ${c.minutes} · **Dónde:** ${c.where_to} · **Prueba:** ${c.test}`, "",
+      ]),
+    ].join("\n");
+    const cfg = updateNote(cfgExisting, { tipo: "guia", id: "INI-CONFIG", estado: "activo", responsable: "owner", tags: ["inicio"] }, cfgAuto, today,
+      "\n# Configuración pendiente\n\nEn una frase: lo que Jaska tiene que configurar para que los agentes trabajen, por orden de prioridad.\n");
+    write(root, cfgRel, cfg.text, cfgExisting, r);
+  }
+
   // ---------- Index zones (so new notes are never orphans) ----------
   const productNotes = notesById(root, "02-PRODUCTOS");
   updateIndexZone(root, "02-PRODUCTOS/_Índice.md",

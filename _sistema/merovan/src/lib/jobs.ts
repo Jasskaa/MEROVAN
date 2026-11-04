@@ -1,5 +1,9 @@
 import "server-only";
 import type { serviceClient } from "@/lib/admin";
+import { AnthropicModel, hasApiKey } from "@/lib/agents/model";
+import { autoKillCheck } from "@/lib/agents/pipeline";
+import { runAgent } from "@/lib/agents/runtime";
+import { SupabaseStore } from "@/lib/agents/supabase-store";
 import { runDecisionEngine } from "@/lib/decisions";
 import { exportToVault, vaultRoot } from "@/lib/obsidian/export";
 import type { createClient } from "@/lib/supabase/server";
@@ -27,6 +31,16 @@ export async function runJob<T extends object>(supabase: Supabase, job: string, 
 export async function dailyRoutine(supabase: Supabase, trigger: "manual" | "cron", retentionClient: Supabase | null) {
   const results: Record<string, unknown> = {};
   results.motor = await runJob(supabase, "motor_decision", trigger, async () => ({ productos: await runDecisionEngine(supabase) }));
+
+  // Agents: automatic stop checks first, then the daily orchestrator cycle (only with a real model).
+  const store = new SupabaseStore(supabase, null);
+  results.parada = await runJob(supabase, "parada_automatica", trigger, async () => ({ parada: await autoKillCheck(store) }));
+  if (hasApiKey()) {
+    results.orquestador = await runJob(supabase, "orquestador_diario", trigger, async () => {
+      const r = await runAgent(store, new AnthropicModel(), "orquestador", "Ciclo diario: revisa el estado, delega lo necesario y resume el día para Jaska.");
+      return { estado: r.status, coste_microusd: r.costMicroUsd, resumen: r.summary.slice(0, 1000) };
+    });
+  }
   if (retentionClient) {
     results.retencion = await runJob(retentionClient, "retencion_datos", trigger, async () => {
       const { data, error } = await retentionClient.rpc("apply_retention");

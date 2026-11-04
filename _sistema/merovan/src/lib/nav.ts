@@ -8,6 +8,8 @@ export type NavIcon =
 export const ADMIN_NAV: { href: string; label: string; icon: NavIcon; group: string; roles: Role[] | "all" }[] = [
   { href: "/admin", label: "Inicio", icon: "home", group: "General", roles: "all" },
   { href: "/admin/decisiones", label: "Decisiones", icon: "spark", group: "General", roles: ["owner", "producto", "marketing", "finanzas"] },
+  { href: "/admin/agentes", label: "Agentes de IA", icon: "server", group: "General", roles: ["owner", "producto", "marketing", "operaciones", "finanzas"] },
+  { href: "/admin/configuracion", label: "Configuración", icon: "check", group: "General", roles: ["owner", "producto", "marketing", "operaciones", "finanzas"] },
   { href: "/admin/productos", label: "Productos", icon: "box", group: "Tienda", roles: "all" },
   { href: "/admin/pedidos", label: "Pedidos", icon: "receipt", group: "Tienda", roles: ["owner", "operaciones", "finanzas"] },
   { href: "/admin/soporte", label: "Soporte", icon: "lifebuoy", group: "Tienda", roles: ["owner", "operaciones", "finanzas"] },
