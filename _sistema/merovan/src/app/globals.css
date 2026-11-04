@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+/* MEROVAN palette, taken from the logo: deep black + champagne gold. */
+:root {
+  --background: #faf8f4;
+  --surface: #ffffff;
+  --foreground: #16130e;
+  --muted: #6b6457;
+  --border: #e6dfd2;
+  --gold: #9a7b45;
+  --gold-soft: #d9c39a;
+  --danger: #b42318;
+  --ok: #217a4a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0b0a08;
+    --surface: #15130f;
+    --foreground: #f2ece1;
+    --muted: #a39a8a;
+    --border: #2a2620;
+    --gold: #d4b483;
+    --gold-soft: #6e5a38;
+    --danger: #f97066;
+    --ok: #47cd89;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-danger: var(--danger);
+  --color-ok: var(--ok);
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-cormorant);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
