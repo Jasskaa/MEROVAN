@@ -9,9 +9,12 @@ export const ADMIN_NAV: { href: string; label: string; roles: Role[] | "all" }[]
   { href: "/admin/visitas", label: "Visitas", roles: "all" },
   { href: "/admin/dinero", label: "Dinero", roles: ["owner", "finanzas"] },
   { href: "/admin/proveedores", label: "Proveedores", roles: ["owner", "producto", "operaciones", "finanzas"] },
+  { href: "/admin/simulador", label: "Simulador", roles: ["owner", "producto", "finanzas"] },
   { href: "/admin/marketing", label: "Marketing", roles: ["owner", "marketing"] },
   { href: "/admin/aprobaciones", label: "Aprobaciones", roles: "all" },
   { href: "/admin/ajustes", label: "Ajustes", roles: ["owner", "finanzas"] },
+  { href: "/admin/equipo", label: "Equipo", roles: ["owner"] },
+  { href: "/admin/cuenta", label: "Mi cuenta", roles: "all" },
 ];
 
 export const canSee = (role: Role, item: (typeof ADMIN_NAV)[number]) =>

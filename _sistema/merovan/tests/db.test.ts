@@ -24,12 +24,13 @@ beforeAll(async () => {
   await db.exec(`
     create role anon; create role authenticated;
     create schema auth;
-    create table auth.users (id uuid primary key, raw_user_meta_data jsonb, email_confirmed_at timestamptz);
+    create table auth.users (id uuid primary key, raw_user_meta_data jsonb, raw_app_meta_data jsonb, email_confirmed_at timestamptz);
     create function auth.uid() returns uuid language sql stable as
       $$ select nullif(current_setting('test.uid', true), '')::uuid $$;
     grant usage on schema auth to anon, authenticated;
   `);
   for (const f of readdirSync(join(root, "migrations")).sort()) {
+    if (f.includes("storage")) continue; // Supabase-only
     await db.exec(readFileSync(join(root, "migrations", f), "utf8"));
   }
   await db.exec(readFileSync(join(root, "seed.sql"), "utf8"));
@@ -39,12 +40,11 @@ beforeAll(async () => {
     grant insert, update, delete on all tables in schema public to authenticated;
     insert into auth.users (id, raw_user_meta_data) values ('${OWNER}', '{"full_name": "Owner"}');
   `);
-  // Open sign-up is closed after the first owner: add the rest of the team bypassing the trigger.
+  // Open sign-up is closed after the first owner; the owner invites people with a role.
   await expect(db.exec(`insert into auth.users (id) values ('${MARKETING}')`)).rejects.toThrow(/registro está cerrado/);
   await db.exec(`
-    alter table auth.users disable trigger on_auth_user_created;
-    insert into auth.users (id) values ('${MARKETING}');
-    insert into profiles (id, full_name, role) values ('${MARKETING}', 'Marketing', 'marketing');
+    insert into auth.users (id, raw_user_meta_data, raw_app_meta_data)
+      values ('${MARKETING}', '{"full_name": "Marketing"}', '{"merovan_role": "marketing"}');
     insert into orders (customer_email, total_cents, status) values ('cliente@example.com', 1995, 'pagado');
   `);
 });
@@ -82,5 +82,37 @@ describe("database", () => {
   it("audit log is immutable", async () => {
     await db.exec("insert into audit_log (action, entity) values ('test', 'x')");
     await expect(db.exec("delete from audit_log")).rejects.toThrow(/inmutable/);
+  });
+
+  it("gives invited users the role chosen by the owner", async () => {
+    const { rows } = await db.query<{ role: string }>(`select role from profiles where id = '${MARKETING}'`);
+    expect(rows[0].role).toBe("marketing");
+  });
+
+  it("generates the next human-readable code", async () => {
+    const { rows } = await db.query<{ c: string }>("select next_code('PRD') as c");
+    expect(rows[0].c).toBe("PRD-0003");
+  });
+
+  it("blocks publishing-ready status without an approved sample", async () => {
+    await expect(
+      db.exec("update products set status = 'listo_para_publicar' where code = 'PRD-0002'"),
+    ).rejects.toThrow(/muestra aprobada/);
+  });
+
+  it("blocks progress with a legal red flag and flags the product", async () => {
+    await db.exec(`update products set legal_checks = '{"marca": "rojo"}' where code = 'PRD-0002'`);
+    await expect(db.exec("update products set status = 'validando_proveedor' where code = 'PRD-0002'")).rejects.toThrow(/Bandera roja/);
+    const { rows } = await db.query<{ f: boolean }>("select legal_red_flag as f from products where code = 'PRD-0002'");
+    expect(rows[0].f).toBe(true);
+    await db.exec("update products set status = 'descartado' where code = 'PRD-0002'"); // discarding is always allowed
+  });
+
+  it("requires a backup supplier to scale", async () => {
+    await db.exec(`
+      insert into samples (code, product_id, supplier_id, status)
+      select 'MUE-0001', p.id, s.id, 'aprobada' from products p, suppliers s where p.code = 'PRD-0001' and s.code = 'PRV-0001';
+    `);
+    await expect(db.exec("update products set status = 'escalando' where code = 'PRD-0001'")).rejects.toThrow(/respaldo/);
   });
 });
