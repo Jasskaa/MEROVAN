@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { audit, requireRole } from "@/lib/admin";
-import { CRITERIA, LEGAL_CHECKS, type LegalValue, type Status, scoreTotal, statusLabel } from "@/lib/domain/product";
+import {
+  CRITERIA, LEGAL_CHECKS, type LegalValue, type Status, scoreTotal, statusLabel, transitionBlockers,
+} from "@/lib/domain/product";
 import { parseEuros, slugify } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
@@ -102,7 +104,27 @@ export async function changeStatus(code: string, formData: FormData) {
   if (reason.length < 3) back(code, "error", "Explica el motivo del cambio de estado", "#estado");
 
   const { supabase, id } = await productId(code);
-  const { data: current } = await supabase.from("products").select("status").eq("id", id).single();
+  const { data: current } = await supabase
+    .from("products")
+    .select("status, score_detail, legal_checks, sample_exception, price_cents, gpsr_manufacturer, gpsr_address, gpsr_contact")
+    .eq("id", id)
+    .single();
+  const [{ count: approved }, { count: backups }] = await Promise.all([
+    supabase.from("samples").select("*", { count: "exact", head: true }).eq("product_id", id).eq("status", "aprobada"),
+    supabase.from("supplier_offers").select("*", { count: "exact", head: true }).eq("product_id", id).eq("role", "respaldo"),
+  ]);
+  // Explain every missing requirement at once (the database guard only reports the first).
+  const blockers = transitionBlockers(to, {
+    scores: current?.score_detail ?? {},
+    legal: current?.legal_checks ?? {},
+    hasApprovedSample: (approved ?? 0) > 0,
+    sampleException: exception || current?.sample_exception,
+    hasBackupSupplier: (backups ?? 0) > 0,
+    gpsrComplete: Boolean(current?.gpsr_manufacturer && current?.gpsr_address && current?.gpsr_contact),
+    hasPrice: current?.price_cents != null,
+  });
+  if (blockers.length) back(code, "error", `No se puede pasar a "${statusLabel(to)}": ${blockers.join(" · ")}`, "#estado");
+
   const { error } = await supabase
     .from("products")
     .update({ status: to, ...(exception ? { sample_exception: exception } : {}) })

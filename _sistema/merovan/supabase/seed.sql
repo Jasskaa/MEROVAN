@@ -24,6 +24,11 @@ values
   ('PRD-0002', 'Lámpara de lectura recargable', 'lampara-de-lectura', 'hogar-oficina', 'candidato', 'borrador',
    'Candidato en validación. (EJEMPLO)', '{}', 2495, 250, null, null, null, 27);
 
+update products set
+  score_detail = '{"demanda":4,"visual":5,"problema":4,"margen":3,"competencia":3,"logistica":5,"riesgo_legal":5,"recompra":2}',
+  legal_checks = '{"ce":"no_aplica","gpsr":"ok","marca":"ok","cosmetica":"no_aplica","juguetes":"no_aplica","electronica":"no_aplica","salud":"no_aplica","bateria":"no_aplica","plataforma":"ok"}'
+where code = 'PRD-0001';
+
 insert into product_variants (product_id, sku, title, stock)
 select id, 'ORG-3', 'Pack de 3', 100 from products where code = 'PRD-0001';
 

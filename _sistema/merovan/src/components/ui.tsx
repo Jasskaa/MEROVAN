@@ -44,6 +44,17 @@ export function Notice({ tone = "neutral", children }: { tone?: "neutral" | "dan
   return <div className={`rounded-md border px-3 py-2 text-sm ${tones[tone]}`}>{children}</div>;
 }
 
+/** Result message pinned to the bottom of the screen, visible wherever the form was. */
+export function Toast({ ok, error }: { ok?: string; error?: string }) {
+  if (!ok && !error) return null;
+  return (
+    <div role={error ? "alert" : "status"}
+      className={`fixed inset-x-4 bottom-4 z-50 mx-auto max-w-xl rounded-lg border px-4 py-3 text-sm shadow-lg bg-surface ${error ? "border-danger text-danger" : "border-ok text-ok"}`}>
+      {error ?? ok}
+    </div>
+  );
+}
+
 export function Table({ head, children }: { head: string[]; children: React.ReactNode }) {
   return (
     <div className="overflow-x-auto">

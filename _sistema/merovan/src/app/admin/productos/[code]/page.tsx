@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- media comes from Supabase Storage URLs */
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Badge, Card, Field, Notice, Table, btn, btnGhost, input } from "@/components/ui";
+import { Badge, Card, Field, Notice, Table, Toast, btn, btnGhost, input } from "@/components/ui";
 import { loadSettings, marginDefaults, requireRole } from "@/lib/admin";
 import { computeMargin } from "@/lib/domain/margin";
 import {
@@ -85,8 +85,7 @@ export default async function ProductPage({
         <Link href={`/admin/simulador?producto=${p.code}`} className={btnGhost}>Abrir en el simulador</Link>
       </header>
 
-      {ok && <Notice tone="ok">{ok}</Notice>}
-      {error && <Notice tone="danger">{error}</Notice>}
+      <Toast ok={ok} error={error} />
 
       <div className="grid gap-6 xl:grid-cols-2">
         {/* ---------- Basics + GPSR ---------- */}

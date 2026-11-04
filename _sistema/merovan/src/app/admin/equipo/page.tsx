@@ -98,7 +98,7 @@ export default async function TeamPage({
           {(team ?? []).map((m) => (
             <tr key={m.id}>
               <td>{m.full_name || "—"}{m.id === staff.id && <span className="ml-1 text-xs text-muted">(tú)</span>}</td>
-              <td colSpan={m.id === staff.id ? 3 : 1}>{m.id === staff.id ? m.role : (
+              <td>{m.id === staff.id ? m.role : (
                 <form action={changeRole.bind(null, m.id)} className="flex gap-2">
                   <select name="role" defaultValue={m.role} className={`${input} mt-0 w-40`} aria-label={`Rol de ${m.full_name}`}>
                     {ROLES.map((r) => <option key={r}>{r}</option>)}
@@ -106,7 +106,8 @@ export default async function TeamPage({
                   <button className={btnGhost}>Cambiar</button>
                 </form>
               )}</td>
-              {m.id !== staff.id && <><td>{date(m.created_at)}</td><td /></>}
+              <td>{date(m.created_at)}</td>
+              <td />
             </tr>
           ))}
         </Table>
