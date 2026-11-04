@@ -3,12 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { rateLimit } from "@/lib/rate-limit";
 import { sessionId, stripe } from "@/lib/store";
 import { createClient } from "@/lib/supabase/server";
 
 async function rpcCart(variantId: string, qty: number, add: boolean) {
   const sid = await sessionId();
   if (!sid) throw new Error("Activa las cookies para usar el carrito");
+  if (!rateLimit(`cart:${sid}`, 60, 60_000).ok) throw new Error("Demasiadas peticiones, espera un momento");
   const supabase = await createClient();
   const { error } = await supabase.rpc("cart_set", { p_session: sid, p_variant: variantId, p_qty: qty, p_add: add });
   if (error) throw new Error(error.message);
@@ -30,6 +32,7 @@ export async function setQuantity(variantId: string, formData: FormData) {
 export async function checkout() {
   const sid = await sessionId();
   if (!sid) redirect("/carrito");
+  if (!rateLimit(`checkout:${sid}`, 10, 10 * 60_000).ok) redirect("/carrito?error=" + encodeURIComponent("Demasiados intentos de pago, espera unos minutos"));
   const supabase = await createClient();
   const { data: orderId, error } = await supabase.rpc("checkout_create_order", { p_session: sid });
   if (error) redirect("/carrito?error=" + encodeURIComponent(error.message));

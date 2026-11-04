@@ -64,6 +64,13 @@ Algunas notas tienen zonas automáticas:
 ```
 Puedes escribir **fuera** de los marcadores con total libertad: la app nunca lo toca. Lo que escribas **dentro** se sobrescribirá en la siguiente exportación.
 
+Qué genera la app (panel → *Sistema → Exportar a Obsidian*, y automáticamente los lunes):
+- Una nota por producto en `02-PRODUCTOS`, que se mueve sola de subcarpeta cuando cambia de fase (el nombre no cambia, los enlaces siguen funcionando).
+- El informe semanal `08-REPORTES/Semanales/REP-AAAA-SNN`: comenta debajo de la zona automática.
+- [[Historial de decisiones]]: qué recomendó el motor y qué decidimos.
+
+Para comprobar que la bóveda está en orden (nombres, IDs, frontmatter, etiquetas y enlaces): *Sistema* en el panel, o `npm run vault:check` en `_sistema/merovan`.
+
 ## 6. Plugins
 Funciona sin instalar nada: usa plugins del núcleo (Plantillas, Notas diarias, Canvas, Propiedades, **Bases**).
 

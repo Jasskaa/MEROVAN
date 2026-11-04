@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "vault:check": "tsx scripts/check-vault.ts"
+    "vault:check": "tsx scripts/check-vault.ts",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
@@ -23,6 +24,7 @@
   "devDependencies": {
     "@electric-sql/pglite": "^0.3.8",
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.55.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
