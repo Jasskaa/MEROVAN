@@ -1,0 +1,9 @@
+# Obsidian: personal workspace state
+.obsidian/workspace*.json
+.obsidian/cache
+.trash/
+# App
+node_modules/
+.next/
+.env*
+!.env.example

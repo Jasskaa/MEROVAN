@@ -1,0 +1,7 @@
+{
+  "userIgnoreFilters": ["_sistema/"],
+  "alwaysUpdateLinks": true,
+  "attachmentFolderPath": "10-RECURSOS/Adjuntos",
+  "newFileLocation": "folder",
+  "newFileFolderPath": "00-INICIO"
+}

@@ -1,0 +1,22 @@
+{
+  "nodes": [
+    {"id":"n1","type":"text","x":0,"y":0,"width":220,"height":90,"color":"6","text":"## 1. Descubrir\nTikTok, Trends, librerías de anuncios"},
+    {"id":"n2","type":"text","x":300,"y":0,"width":220,"height":90,"color":"6","text":"## 2. Validar\nScorecard, legal, margen, muestra"},
+    {"id":"n3","type":"text","x":600,"y":0,"width":220,"height":90,"color":"6","text":"## 3. Publicar\nShopify + TikTok Shop (con aprobación)"},
+    {"id":"n4","type":"text","x":900,"y":0,"width":220,"height":90,"color":"6","text":"## 4. Marketing\nCreatividades, creadores, test"},
+    {"id":"n5","type":"text","x":900,"y":200,"width":220,"height":90,"color":"6","text":"## 5. Medir\nROAS, CPA, CTR por producto y gancho"},
+    {"id":"n6","type":"text","x":600,"y":200,"width":220,"height":90,"color":"1","text":"## 6. Decidir\nESCALAR / ARREGLAR / MATAR"},
+    {"id":"n7","type":"text","x":300,"y":200,"width":220,"height":90,"color":"6","text":"## 7. Operar\nPedidos, soporte, devoluciones, cierre"},
+    {"id":"f1","type":"file","x":0,"y":200,"width":220,"height":90,"file":"06-OPERACIONES/SOP-0005 Decidir escalar, arreglar o matar.md"}
+  ],
+  "edges": [
+    {"id":"e1","fromNode":"n1","fromSide":"right","toNode":"n2","toSide":"left"},
+    {"id":"e2","fromNode":"n2","fromSide":"right","toNode":"n3","toSide":"left"},
+    {"id":"e3","fromNode":"n3","fromSide":"right","toNode":"n4","toSide":"left"},
+    {"id":"e4","fromNode":"n4","fromSide":"bottom","toNode":"n5","toSide":"top"},
+    {"id":"e5","fromNode":"n5","fromSide":"left","toNode":"n6","toSide":"right"},
+    {"id":"e6","fromNode":"n6","fromSide":"left","toNode":"n7","toSide":"right"},
+    {"id":"e7","fromNode":"n6","fromSide":"top","toNode":"n2","toSide":"bottom","label":"arreglar"},
+    {"id":"e8","fromNode":"n6","fromSide":"bottom","toNode":"f1","toSide":"bottom","label":"cómo"}
+  ]
+}
