@@ -85,6 +85,40 @@ export function demoModel(agent: string) {
         },
         () => ({ content: [say("Prueba sin IA: precios calculados por el sistema con el margen mínimo de Límites. Margen no verificado: las cifras de proveedor son de ejemplo.")] }),
       ]);
+    case "contenido": {
+      const scripts = [
+        { angle: "problema", hook: "(ejemplo) ¿Cables por el suelo otra vez?", problem: "Cables enredados bajo la mesa", demo: "Montaje en 5 minutos y antes/después de la mesa", proof: "Demostración en plano continuo", offer: "Envío desde España", cta: "Míralo en la tienda" },
+        { angle: "demostracion", hook: "(ejemplo) Así queda mi escritorio en 30 segundos", problem: "Escritorio desordenado", demo: "Timelapse colocando la bandeja", proof: "Demostración real del producto", offer: "Envío desde España", cta: "Enlace en el perfil" },
+      ];
+      return new ScriptedModel([
+        () => ({ content: [callTool("listar_productos", {})] }),
+        (req) => {
+          const product = ((lastResults(req)[0] ?? []) as { code: string }[])[0];
+          return { content: product ? scripts.map((sc) => callTool("crear_guion", { code: product.code, ...sc, contains_ai: false })) : [say("No hay productos para crear contenido.")] };
+        },
+        (req) => {
+          const codes = (lastResults(req) as { guion: string }[]).map((r) => r.guion);
+          const product = ((lastResults({ ...req, messages: req.messages.slice(0, -2) })[0] ?? []) as { code: string }[])[0];
+          return { content: product ? codes.map((g, i) => callTool("crear_creatividad", { code: product.code, script: g, hook: scripts[i].hook, angle: scripts[i].angle, platforms: ["tiktok", "meta"], contains_ai: false })) : [say("fin")] };
+        },
+        () => ({ content: [say("Prueba sin IA: 2 guiones y 2 creatividades de ejemplo en el banco. Con la clave de IA el agente creará 5-10 piezas por producto.")] }),
+      ]);
+    }
+    case "publicacion": {
+      const day = (n: number) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
+      return new ScriptedModel([
+        () => ({ content: [callTool("banco_creatividades", {})] }),
+        (req) => {
+          const demoPieces = ((lastResults(req)[0] ?? []) as { code: string; hook: string }[]).filter((c) => c.hook.startsWith("(ejemplo)")).slice(0, 2);
+          return {
+            content: demoPieces.length
+              ? demoPieces.map((c, i) => callTool("programar_publicacion", { day: day(i + 1), platform: "tiktok", creative: c.code, title: c.hook, caption: `${c.hook.replace("(ejemplo) ", "")} #orden #escritorio #hogar`, ai_labelled: false }))
+              : [say("No hay piezas de ejemplo en el banco: ejecuta antes el agente de Contenido.")],
+          };
+        },
+        () => ({ content: [say("Prueba sin IA: 2 publicaciones de ejemplo en el calendario de los próximos días, cada una con su propuesta en la Bandeja. Nada se publica sin aprobación.")] }),
+      ]);
+    }
     case "fichas":
       // Read only: without AI it does not write texts into real products.
       return new ScriptedModel([

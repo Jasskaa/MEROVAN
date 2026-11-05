@@ -3,7 +3,7 @@ import { loadSettings, marginDefaults, type serviceClient } from "@/lib/admin";
 import type { createClient } from "@/lib/supabase/server";
 import type { Guardrails, Usage } from "./policy";
 import type { MarginDefaults } from "./research";
-import type { AgentStore, CandidateRow, NewCandidate, NicheInput, ProductSummary, ProposalRow, ResearchNiche, SupplierOfferView } from "./store";
+import type { AgentStore, CalendarEntry, CandidateRow, CreativeView, ScriptInput, NewCandidate, NicheInput, ProductSummary, ProposalRow, ResearchNiche, SupplierOfferView } from "./store";
 
 type Db = Awaited<ReturnType<typeof createClient>> | NonNullable<ReturnType<typeof serviceClient>>;
 
@@ -196,5 +196,57 @@ export class SupabaseStore implements AgentStore {
   async setPublished(code: string, priceCents?: number) {
     const { error } = await this.db.from("products").update({ publish_status: "publicado", ...(priceCents != null ? { price_cents: priceCents } : {}) }).eq("code", code);
     if (error) throw new Error(error.message);
+  }
+
+  private async productId(code: string) {
+    const { data } = await this.db.from("products").select("id").eq("code", code).maybeSingle();
+    if (!data) throw new Error("Producto no encontrado");
+    return data.id as string;
+  }
+  async createScript(i: ScriptInput) {
+    const product_id = await this.productId(i.productCode);
+    const { data: code } = await this.db.rpc("next_code", { prefix: "GUI" });
+    const { error } = await this.db.from("scripts").insert({
+      code, product_id, angle: i.angle, hook: i.hook, problem: i.problem, demo: i.demo, proof: i.proof, offer: i.offer, cta: i.cta,
+      contains_ai: i.containsAi, ejemplo: i.ejemplo, created_by: this.actor,
+    });
+    if (error) throw new Error(error.message);
+    return code as string;
+  }
+  async createCreative(i: { productCode: string; scriptCode?: string; hook: string; angle: string; platforms: string[]; containsAi: boolean; ejemplo: boolean }) {
+    const product_id = await this.productId(i.productCode);
+    const script = i.scriptCode ? (await this.db.from("scripts").select("id").eq("code", i.scriptCode).maybeSingle()).data : null;
+    if (i.scriptCode && !script) throw new Error("Guion no encontrado");
+    const { data: code } = await this.db.rpc("next_code", { prefix: "CRE" });
+    const { error } = await this.db.from("creatives").insert({
+      code, product_id, script_id: script?.id ?? null, hook: i.hook, angle: i.angle, platforms: i.platforms, status: "idea",
+      contains_ai: i.containsAi, ejemplo: i.ejemplo, created_by: this.actor,
+    });
+    if (error) throw new Error(error.message);
+    return code as string;
+  }
+  async listCreatives(): Promise<CreativeView[]> {
+    const { data } = await this.db.from("creatives").select("code, hook, angle, status, contains_ai, platforms, product:products(code), script:scripts(code)").order("created_at", { ascending: false }).limit(50);
+    return (data ?? []).map((c) => {
+      const r = c as unknown as { code: string; hook: string; angle: string; status: string; contains_ai: boolean; platforms: string[]; product: { code: string } | null; script: { code: string } | null };
+      return { code: r.code, product: r.product?.code ?? "", hook: r.hook, angle: r.angle, status: r.status, contains_ai: r.contains_ai, platforms: r.platforms, script: r.script?.code ?? null };
+    });
+  }
+  async schedule(i: { day: string; platform: string; title: string; caption: string; creativeCode: string; ejemplo: boolean }) {
+    const { data: cr } = await this.db.from("creatives").select("id").eq("code", i.creativeCode).maybeSingle();
+    if (!cr) throw new Error("Creatividad no encontrada");
+    const { data, error } = await this.db.from("content_calendar").insert({ day: i.day, platform: i.platform, kind: "organico", title: i.title, caption: i.caption, creative_id: cr.id, ejemplo: i.ejemplo }).select("id").single();
+    if (error) throw new Error(error.message);
+    return data.id as string;
+  }
+  async listCalendar(fromDay: string): Promise<CalendarEntry[]> {
+    const { data } = await this.db.from("content_calendar").select("id, day, platform, title, caption, done, proposal_id, creative:creatives(code)").gte("day", fromDay).order("day").limit(60);
+    return (data ?? []).map((c) => {
+      const r = c as unknown as CalendarEntry & { creative: { code: string } | null };
+      return { id: r.id, day: r.day, platform: r.platform, title: r.title, caption: r.caption, done: r.done, proposal_id: r.proposal_id, creative: r.creative?.code ?? null };
+    });
+  }
+  async linkCalendarProposal(id: string, proposalId: string) {
+    await this.db.from("content_calendar").update({ proposal_id: proposalId }).eq("id", id);
   }
 }

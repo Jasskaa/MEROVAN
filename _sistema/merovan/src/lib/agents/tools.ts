@@ -6,7 +6,7 @@ import { validateListing } from "@/lib/domain/listing";
 import { CRITERIA } from "@/lib/domain/product";
 import { propose } from "./pipeline";
 import { type Offer, rankOffers, recommendPrice, scoreCandidate } from "./research";
-import type { AgentStore } from "./store";
+import { ANGLES, type AgentStore } from "./store";
 import type { Tool } from "./model";
 
 export interface ToolContext { store: AgentStore; agent: string; runId: string | null; taskId: string | null; demo?: boolean }
@@ -280,6 +280,91 @@ export const TOOLS: AgentTool[] = [
       await store.saveListingText(i.code, { description: i.description, bullets: i.bullets, ...(i.gpsr_warnings ? { gpsr_warnings: i.gpsr_warnings } : {}) });
       const after = await store.getListing(i.code);
       return { guardado: true, validacion: validateListing(after!) };
+    },
+  },
+  {
+    name: "crear_guion",
+    description:
+      "Contenido: guarda un guion de vídeo corto para un producto (gancho de 1-2 s, problema, demostración, prueba, oferta, llamada a la acción). " +
+      "Se rechaza si contiene claims prohibidos, prueba social inventada o urgencia falsa. La prueba solo puede ser una demostración o un dato verificable.",
+    schema: z.object({
+      code: z.string().regex(/^PRD-\d{4}$/), angle: z.enum(ANGLES), hook: z.string().min(5).max(150), problem: z.string().max(500),
+      demo: z.string().max(800), proof: z.string().max(500), offer: z.string().max(300), cta: z.string().max(200), contains_ai: z.boolean(),
+    }),
+    jsonSchema: obj({
+      code: { type: "string" }, angle: { type: "string", enum: [...ANGLES] }, hook: { type: "string" }, problem: { type: "string" },
+      demo: { type: "string" }, proof: { type: "string" }, offer: { type: "string" }, cta: { type: "string" },
+      contains_ai: { type: "boolean", description: "true si la pieza usará imagen, voz o vídeo generados con IA" },
+    }, ["code", "angle", "hook", "problem", "demo", "proof", "offer", "cta", "contains_ai"]),
+    run: async ({ store, demo }, i) => {
+      const { deterministicReview } = await import("./compliance");
+      const issues = deterministicReview({ text: [i.hook, i.problem, i.demo, i.proof, i.offer, i.cta].join("\n") });
+      if (issues.length) throw new Error(`Guion rechazado: ${issues.join("; ")}`);
+      return { guion: await store.createScript({ productCode: i.code, angle: i.angle, hook: i.hook, problem: i.problem, demo: i.demo, proof: i.proof, offer: i.offer, cta: i.cta, containsAi: i.contains_ai, ejemplo: Boolean(demo) }) };
+    },
+  },
+  {
+    name: "crear_creatividad",
+    description: "Contenido: crea una pieza en el banco de creatividades (estado idea) a partir de un guion, con sus plataformas. La grabación y edición las hace una persona o la herramienta conectada.",
+    schema: z.object({
+      code: z.string().regex(/^PRD-\d{4}$/), script: z.string().regex(/^GUI-\d{4}$/).optional(), hook: z.string().min(5).max(150),
+      angle: z.enum(ANGLES), platforms: z.array(z.enum(["tiktok", "meta"])).min(1), contains_ai: z.boolean(),
+    }),
+    jsonSchema: obj({
+      code: { type: "string" }, script: { type: "string", description: "GUI-0001" }, hook: { type: "string" }, angle: { type: "string", enum: [...ANGLES] },
+      platforms: { type: "array", items: { type: "string", enum: ["tiktok", "meta"] } }, contains_ai: { type: "boolean" },
+    }, ["code", "hook", "angle", "platforms", "contains_ai"]),
+    run: async ({ store, demo }, i) => ({
+      creatividad: await store.createCreative({ productCode: i.code, scriptCode: i.script, hook: i.hook, angle: i.angle, platforms: i.platforms, containsAi: i.contains_ai, ejemplo: Boolean(demo) }),
+    }),
+  },
+  {
+    name: "banco_creatividades",
+    description: "Banco de creatividades: código, producto, gancho, ángulo, estado, plataformas y si lleva IA.",
+    schema: z.object({}),
+    jsonSchema: obj({}),
+    externalData: true,
+    run: ({ store }) => store.listCreatives(),
+  },
+  {
+    name: "ver_calendario",
+    description: "Publicación: calendario de contenido desde hoy (día, plataforma, pieza, texto y propuesta asociada).",
+    schema: z.object({}),
+    jsonSchema: obj({}),
+    externalData: true,
+    run: ({ store }) => store.listCalendar(new Date().toISOString().slice(0, 10)),
+  },
+  {
+    name: "programar_publicacion",
+    description:
+      "Publicación: reserva una pieza en el calendario y crea su propuesta de publicación. El sistema aplica el máximo diario de publicaciones por plataforma, " +
+      "revisa el texto y decide según la autonomía; nada se publica sin pasar por ahí. Si la pieza lleva IA, el texto debe etiquetarlo.",
+    schema: z.object({
+      day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), platform: z.enum(["tiktok", "instagram"]), creative: z.string().regex(/^CRE-\d{4}$/),
+      title: z.string().min(3).max(140), caption: z.string().min(5).max(2200), ai_labelled: z.boolean(),
+    }),
+    jsonSchema: obj({
+      day: { type: "string", description: "AAAA-MM-DD, hoy o después" }, platform: { type: "string", enum: ["tiktok", "instagram"] },
+      creative: { type: "string" }, title: { type: "string" }, caption: { type: "string", description: "Texto del post con hashtags" },
+      ai_labelled: { type: "boolean", description: "true si el texto o la etiqueta de la plataforma indica contenido generado con IA" },
+    }, ["day", "platform", "creative", "title", "caption", "ai_labelled"]),
+    run: async (ctx, i) => {
+      const { store, demo } = ctx;
+      if (i.day < new Date().toISOString().slice(0, 10)) throw new Error("No se puede programar en el pasado");
+      const creative = (await store.listCreatives()).find((c) => c.code === i.creative);
+      if (!creative) throw new Error("Creatividad no encontrada");
+      const max = (await store.getGuardrails()).organic_posts_day_max ?? 0;
+      const sameDay = (await store.listCalendar(i.day)).filter((c) => c.day === i.day && c.platform === i.platform).length;
+      if (sameDay >= max) throw new Error(`Ya hay ${sameDay} publicaciones en ${i.platform} el ${i.day} (máximo ${max})`);
+      const entry = await store.schedule({ day: i.day, platform: i.platform, title: i.title, caption: i.caption, creativeCode: i.creative, ejemplo: Boolean(demo) });
+      const p = await propose(store, {
+        agent: ctx.agent, runId: ctx.runId, taskId: ctx.taskId, actionType: "publicar_contenido", title: `${i.platform} ${i.day}: ${i.title}`,
+        reason: `Programado en el calendario para el ${i.day} con la creatividad ${i.creative}`,
+        payload: { calendar_id: entry, platform: i.platform, day: i.day, creative: i.creative, text: i.caption, contains_ai: creative.contains_ai, ai_labelled: i.ai_labelled },
+        idempotencyKey: `publicar:${entry}`,
+      });
+      await store.linkCalendarProposal(entry, p.id);
+      return { calendario: entry, propuesta: p };
     },
   },
 ];

@@ -153,6 +153,13 @@ export async function deleteDemoResearch() {
   const { error } = await supabase.from("niches").delete().eq("demo", true);
   if (error) back("/admin/agentes/investigacion", "error", error.message);
   await supabase.from("niche_candidates").delete().eq("demo", true);
-  await audit("borrar_demo_investigacion", "niches", null, {});
+  // Content test runs: their calendar entries, the proposals they created, creatives and scripts.
+  const { data: cal } = await supabase.from("content_calendar").select("proposal_id").eq("ejemplo", true);
+  const proposalIds = (cal ?? []).map((c) => c.proposal_id).filter(Boolean) as string[];
+  await supabase.from("content_calendar").delete().eq("ejemplo", true);
+  if (proposalIds.length) await supabase.from("agent_proposals").delete().in("id", proposalIds);
+  await supabase.from("creatives").delete().eq("ejemplo", true);
+  await supabase.from("scripts").delete().eq("ejemplo", true);
+  await audit("borrar_datos_ejemplo", "niches", null, { proposals: proposalIds.length });
   back("/admin/agentes/investigacion", "ok", "Datos de ejemplo borrados");
 }

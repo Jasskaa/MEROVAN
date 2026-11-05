@@ -5,7 +5,7 @@ import { AGENTS } from "@/lib/agents/agents";
 import { hasApiKey } from "@/lib/agents/model";
 import { date } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
-import { createTestProposals, runAgentNow, toggleDryRun, toggleKillSwitch } from "./actions";
+import { createTestProposals, deleteDemoResearch, runAgentNow, toggleDryRun, toggleKillSwitch } from "./actions";
 
 const usd = (micro: number) => `${(micro / 1_000_000).toFixed(2).replace(".", ",")} $`;
 
@@ -90,8 +90,11 @@ export default async function AgentsHome({ searchParams }: { searchParams: Promi
             <button className={btn}>Ejecutar ahora</button>
           </form>
         )}
-        {process.env.NODE_ENV !== "production" && staff.role === "owner" && (
-          <form action={createTestProposals} className="mt-3"><button className={btnGhost}>Crear propuestas de prueba (solo desarrollo)</button></form>
+        {staff.role === "owner" && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {process.env.NODE_ENV !== "production" && <form action={createTestProposals}><button className={btnGhost}>Crear propuestas de prueba (solo desarrollo)</button></form>}
+            <form action={deleteDemoResearch}><button className={btnGhost}>Borrar datos de ejemplo de los agentes</button></form>
+          </div>
         )}
       </Card>
 

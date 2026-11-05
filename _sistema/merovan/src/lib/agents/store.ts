@@ -35,6 +35,11 @@ export interface SupplierOfferView { product: string; supplier: string; warehous
 export type NewCandidate = Pick<CandidateRow, "niche_id" | "name" | "description" | "scores" | "score_total" | "passes" | "score_reasons" | "demo">;
 export interface ResearchNiche { id: string; name: string; thesis: string; confidence: string; status: string; candidates: CandidateRow[] }
 
+export const ANGLES = ["problema", "demostracion", "antes_despues", "comparacion", "unboxing", "otro"] as const;
+export interface ScriptInput { productCode: string; angle: (typeof ANGLES)[number]; hook: string; problem: string; demo: string; proof: string; offer: string; cta: string; containsAi: boolean; ejemplo: boolean }
+export interface CreativeView { code: string; product: string; hook: string; angle: string; status: string; contains_ai: boolean; platforms: string[]; script: string | null }
+export interface CalendarEntry { id: string; day: string; platform: string; title: string; caption: string; creative: string | null; done: boolean; proposal_id: string | null }
+
 export interface AgentStore {
   getState(): Promise<{ killSwitch: boolean; dryRun: boolean }>;
   setKillSwitch(on: boolean, reason: string, automatic: boolean, actor?: string | null): Promise<void>;
@@ -74,6 +79,13 @@ export interface AgentStore {
   getListing(code: string): Promise<(ListingInput & { code: string; publishStatus: string; gpsrWarnings: string | null }) | null>;
   saveListingText(code: string, t: { description: string; bullets: string[]; gpsr_warnings?: string }): Promise<void>;
   setPublished(code: string, priceCents?: number): Promise<void>;
+
+  createScript(i: ScriptInput): Promise<string>;
+  createCreative(i: { productCode: string; scriptCode?: string; hook: string; angle: string; platforms: string[]; containsAi: boolean; ejemplo: boolean }): Promise<string>;
+  listCreatives(): Promise<CreativeView[]>;
+  schedule(i: { day: string; platform: string; title: string; caption: string; creativeCode: string; ejemplo: boolean }): Promise<string>;
+  listCalendar(fromDay: string): Promise<CalendarEntry[]>;
+  linkCalendarProposal(id: string, proposalId: string): Promise<void>;
 }
 
 export const DEFAULT_MARGIN: MarginDefaults = {
@@ -98,6 +110,9 @@ export class MemoryStore implements AgentStore {
   niches: Omit<ResearchNiche, "candidates">[] = [];
   candidates: CandidateRow[] = [];
   offers: SupplierOfferView[] = [];
+  scripts: (ScriptInput & { code: string })[] = [];
+  creatives: (CreativeView & { ejemplo: boolean })[] = [];
+  calendar: (CalendarEntry & { ejemplo: boolean })[] = [];
   refunds = 0;
   private seq = 0;
   private id = (p: string) => `${p}-${++this.seq}`;
@@ -200,4 +215,27 @@ export class MemoryStore implements AgentStore {
     p.publish_status = "publicado";
     if (priceCents != null) p.price_cents = priceCents;
   }
+
+  private code(prefix: string, n: number) { return `${prefix}-${String(n + 1).padStart(4, "0")}`; }
+  async createScript(i: ScriptInput) {
+    if (!this.products.some((p) => p.code === i.productCode)) throw new Error("Producto no encontrado");
+    const code = this.code("GUI", this.scripts.length);
+    this.scripts.push({ ...i, code });
+    return code;
+  }
+  async createCreative(i: { productCode: string; scriptCode?: string; hook: string; angle: string; platforms: string[]; containsAi: boolean; ejemplo: boolean }) {
+    if (!this.products.some((p) => p.code === i.productCode)) throw new Error("Producto no encontrado");
+    const code = this.code("CRE", this.creatives.length);
+    this.creatives.push({ code, product: i.productCode, hook: i.hook, angle: i.angle, status: "idea", contains_ai: i.containsAi, platforms: i.platforms, script: i.scriptCode ?? null, ejemplo: i.ejemplo });
+    return code;
+  }
+  async listCreatives() { return [...this.creatives]; }
+  async schedule(i: { day: string; platform: string; title: string; caption: string; creativeCode: string; ejemplo: boolean }) {
+    if (!this.creatives.some((c) => c.code === i.creativeCode)) throw new Error("Creatividad no encontrada");
+    const id = this.id("cal");
+    this.calendar.push({ id, day: i.day, platform: i.platform, title: i.title, caption: i.caption, creative: i.creativeCode, done: false, proposal_id: null, ejemplo: i.ejemplo });
+    return id;
+  }
+  async listCalendar(fromDay: string) { return this.calendar.filter((c) => c.day >= fromDay); }
+  async linkCalendarProposal(id: string, proposalId: string) { const c = this.calendar.find((x) => x.id === id); if (c) c.proposal_id = proposalId; }
 }
