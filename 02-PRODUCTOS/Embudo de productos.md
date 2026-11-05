@@ -1,7 +1,12 @@
 ---
-
+tipo: guia
+id: PRD-EMBUDO
+estado: activo
+responsable: owner
+creado: 2026-11-04
+actualizado: 2026-11-05
+tags: [inicio]
 kanban-plugin: board
-
 ---
 
 ## Idea / candidato

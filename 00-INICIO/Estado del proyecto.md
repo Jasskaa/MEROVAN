@@ -12,7 +12,12 @@ tags: [inicio]
 
 En una frase: dónde estamos, qué funciona y cuál es el siguiente paso; Claude Code lo lee al empezar cada sesión (ver `CLAUDE.md`).
 
-_Última actualización: 5 de noviembre de 2026 (tarde)._
+_Última actualización: 5 de noviembre de 2026 (noche)._
+
+**Ordenador de casa listo (5/11/2026):** repositorio clonado, Git y Node.js 26 instalados, `.env.local` copiado,
+dependencias y Chromium instalados; tipos, lint, 145 tests y 16 E2E en verde (2 saltados a propósito: no hay stock),
+`vault:check` con 0 errores, Supabase y Vercel conectados. Pendiente: que Jaska cambie la clave de servicio de Supabase
+y `CRON_SECRET` (pasaron por el chat) y que inicie sesión en el panel en este ordenador.
 
 ## ⚠️ Ahora mismo: prueba de publicación activa
 Los 3 productos (PRD-0001, PRD-0002, PRD-0003) están **publicados en https://merovan.vercel.app como prueba**:
