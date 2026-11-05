@@ -1,7 +1,8 @@
 import "server-only";
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
-import { loadSettings, marginDefaults, type serviceClient } from "@/lib/admin";
+import type { serviceClient } from "@/lib/admin";
+import { loadSettings, marginDefaults } from "@/lib/settings";
 import { computeMargin } from "@/lib/domain/margin";
 import { computeMetrics } from "@/lib/domain/metrics";
 import { statusLabel } from "@/lib/domain/product";

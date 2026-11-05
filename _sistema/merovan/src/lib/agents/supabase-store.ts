@@ -1,5 +1,6 @@
 import "server-only";
-import { loadSettings, marginDefaults, type serviceClient } from "@/lib/admin";
+import type { serviceClient } from "@/lib/admin";
+import { loadSettings, marginDefaults } from "@/lib/settings";
 import type { createClient } from "@/lib/supabase/server";
 import type { Guardrails, Usage } from "./policy";
 import { runDecisionEngine } from "@/lib/decisions";

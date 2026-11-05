@@ -1,7 +1,7 @@
 import "server-only";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
-import type { MarginInput } from "@/lib/domain/margin";
+import { loadSettings as loadSettingsFrom, marginDefaults } from "@/lib/settings";
 import { createClient, getStaff, type Role } from "@/lib/supabase/server";
 
 /** Signed-in staff member with one of `roles`, or redirect to the panel. */
@@ -27,27 +27,8 @@ export function serviceClient() {
   return createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, { auth: { persistSession: false } });
 }
 
-type SettingsMap = Record<string, unknown>;
-
-type Client = Awaited<ReturnType<typeof createClient>> | NonNullable<ReturnType<typeof serviceClient>>;
-
-export async function loadSettings(client?: Client): Promise<SettingsMap> {
-  const supabase = client ?? (await createClient());
-  const { data } = await supabase.from("settings").select("key, value");
-  return Object.fromEntries((data ?? []).map((s) => [s.key, s.value]));
+/** Settings of the session's client by default (re-exported from the pure settings module). */
+export async function loadSettings(client?: Parameters<typeof loadSettingsFrom>[0]) {
+  return loadSettingsFrom(client ?? (await createClient()));
 }
-
-/** Margin defaults taken from the editable settings table. */
-export function marginDefaults(s: SettingsMap): Omit<MarginInput, "priceWithVat" | "productCost" | "shippingCost"> {
-  const fee = (s.payment_fee ?? {}) as { pct?: number; fixed_cents?: number };
-  return {
-    vatRate: Number(s.vat_default ?? 0.21),
-    platformCommissionPct: 0,
-    paymentFeePct: fee.pct ?? 0.014,
-    paymentFeeFixed: (fee.fixed_cents ?? 25) / 100,
-    returnsProvisionPct: Number(s.returns_provision ?? 0.06),
-    otherCosts: 0,
-    targetRoasFactor: Number(s.target_roas_factor ?? 1.4),
-    testBudgetMultiplier: Number(s.test_budget_multiplier ?? 4),
-  };
-}
+export { marginDefaults };

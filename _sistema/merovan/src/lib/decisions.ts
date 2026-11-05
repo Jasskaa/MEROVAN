@@ -1,5 +1,6 @@
 import "server-only";
-import { loadSettings, marginDefaults, serviceClient } from "@/lib/admin";
+import type { serviceClient } from "@/lib/admin";
+import { loadSettings, marginDefaults } from "@/lib/settings";
 import { DEFAULT_RULES, type DecisionInput, type DecisionRules, decide } from "@/lib/domain/decision";
 import { computeMargin } from "@/lib/domain/margin";
 import { createClient } from "@/lib/supabase/server";

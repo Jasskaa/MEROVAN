@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "merovan": {
+      "command": "node",
+      "args": [
+        "--no-deprecation",
+        "--conditions=react-server",
+        "--import",
+        "./_sistema/merovan/node_modules/tsx/dist/loader.mjs",
+        "_sistema/merovan/mcp/server.mts"
+      ],
+      "env": { "TSX_TSCONFIG_PATH": "_sistema/merovan/tsconfig.json" }
+    }
+  }
+}

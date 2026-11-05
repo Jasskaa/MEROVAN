@@ -9,10 +9,12 @@
     "lint": "eslint",
     "test": "vitest run",
     "vault:check": "tsx scripts/check-vault.ts",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "mcp": "node --no-deprecation --conditions=react-server --import tsx mcp/server.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.4.0",
+    "@modelcontextprotocol/sdk": "1.32.2",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.4",
     "next": "15.5.29",

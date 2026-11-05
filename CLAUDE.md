@@ -48,6 +48,18 @@ Este repositorio es **a la vez la bóveda de Obsidian y el código**.
 7. **Tras cada fase o integración, para** y dile a Jaska: (1) qué funciona ya en simulación, (2) qué tiene que configurar él, en orden y
    con pasos exactos, (3) qué prueba haréis juntos. Espera su confirmación antes de seguir.
 
+## Trabajar con el portal: usa las herramientas `merovan`
+Para productos, proveedores, ofertas, imágenes, márgenes y Obsidian **usa las herramientas del servidor `merovan`** (MCP),
+no SQL suelto ni commits. Se cargan solas al abrir esta carpeta (`.mcp.json`; Claude Code pide aprobarlas la primera vez).
+- Herramientas: `estado_portal`, `listar_productos`, `ver_producto`, `crear_producto`, `editar_producto`, `puntuar_producto`,
+  `datos_gpsr`, `guardar_variante`, `guardar_proveedor`, `guardar_oferta`, `calcular_margen`, `subir_imagen` (archivo local),
+  `cambiar_estado`, `borrar_borrador` (solo con confirmación de Jaska), `proponer_publicacion` (va a la Bandeja) y `exportar_obsidian`.
+- Todo queda como borrador y en la auditoría como `claude-mcp`. **Nunca publica**: la publicación la aprueba Jaska en la Bandeja.
+- Necesita `SUPABASE_SERVICE_ROLE_KEY` en `_sistema/merovan/.env.local`; sin ella cada herramienta lo explica y no hace nada.
+- Código: `_sistema/merovan/mcp/server.mts` (reutiliza `src/lib/`; los módulos que use no pueden importar nada de Next.js).
+  Prueba manual: `npm run mcp` en `_sistema/merovan`.
+- Imágenes: solo fotos propias o del proveedor con permiso de uso; nunca de otras tiendas.
+
 ## Cómo trabajar aquí
 - Antes de dar algo por hecho, en `_sistema/merovan`: `npx tsc --noEmit`, `npm run lint`, `npm test` (145 tests),
   `npx playwright test` (18 E2E; la primera ejecución en frío puede fallar por tiempo: repite) y, si tocas dependencias o fuentes, `npm run build`.
