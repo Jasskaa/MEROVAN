@@ -5,7 +5,7 @@ estado: activo
 responsable: owner
 tags: [inicio]
 creado: 2026-11-04
-actualizado: 2026-11-04
+actualizado: 2026-11-05
 ---
 
 # Configuración pendiente
@@ -66,7 +66,7 @@ Los agentes razonan con Claude. Sin clave funcionan en modo simulado con respues
 
 - **Tiempo:** 10 min · **Dónde:** .env.local: MEROVAN_ANTHROPIC_API_KEY · **Prueba:** Agentes → Sistema muestra "IA conectada" y una ejecución del Orquestador termina en «ok»
 
-### ☐ 6. Clave de servicio de Supabase
+### ◐ 6. Clave de servicio de Supabase
 Permite altas de equipo, confirmar pagos y que los agentes y la tarea diaria trabajen sin sesión abierta.
 
 1. supabase.com → proyecto merovan-dev → Project Settings → API Keys → Secret keys.

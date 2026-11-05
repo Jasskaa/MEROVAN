@@ -58,6 +58,10 @@ no SQL suelto ni commits. Se cargan solas al abrir esta carpeta (`.mcp.json`; Cl
 - Necesita `SUPABASE_SERVICE_ROLE_KEY` en `_sistema/merovan/.env.local`; sin ella cada herramienta lo explica y no hace nada.
 - Código: `_sistema/merovan/mcp/server.mts` (reutiliza `src/lib/`; los módulos que use no pueden importar nada de Next.js).
   Prueba manual: `npm run mcp` en `_sistema/merovan`.
+- **Si las herramientas `merovan` no están cargadas en tu sesión** (chat abierto antes de `.mcp.json`), usa el puente por línea de
+  comandos desde `_sistema/merovan`, con las mismas herramientas y reglas:
+  `npm run --silent merovan -- lista` · `npm run --silent merovan -- ver_producto '{"code":"PRD-0001"}'` ·
+  `npm run --silent merovan -- crear_producto @datos.json` (argumentos desde un JSON). Código de salida 1 si la herramienta falla.
 - Imágenes: solo fotos propias o del proveedor con permiso de uso; nunca de otras tiendas.
 
 ## Cómo trabajar aquí

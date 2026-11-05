@@ -10,7 +10,8 @@
     "test": "vitest run",
     "vault:check": "tsx scripts/check-vault.ts",
     "e2e": "playwright test",
-    "mcp": "node --no-deprecation --conditions=react-server --import tsx mcp/server.mts"
+    "mcp": "node --no-deprecation --conditions=react-server --import tsx mcp/server.mts",
+    "merovan": "node --no-deprecation --import tsx mcp/cli.mts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.4.0",
