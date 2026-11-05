@@ -43,4 +43,5 @@ _Última actualización: 5 de noviembre de 2026._
 - Ningún agente se ha ejecutado aún con IA real (solo pruebas guionizadas).
 - Integraciones externas sin conectar (TikTok, Meta, anuncios, proveedores, correo, reembolsos en Stripe): al aprobar fuera de
   simulación fallan con «Integración no conectada» y se hacen a mano.
-- Sin dominio propio, sin textos legales definitivos, sin 2FA, copias de seguridad manuales, catálogo con datos de ejemplo.
+- Sin dominio propio, sin textos legales definitivos, sin 2FA y con copias de seguridad manuales.
+- Base de datos y bóveda limpias (5/11/2026): sin productos, pedidos ni datos de prueba; se empieza de cero con productos reales.

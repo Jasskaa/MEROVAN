@@ -21,4 +21,4 @@ En una frase: cómo comparar proveedores y pedir muestra antes de anunciar nada.
 ## Criterio de terminado
 Muestra aprobada/rechazada y producto en `muestra-aprobada` o descartado.
 ## Relacionado
-[[SOP-0001 Validar un producto]] · [[SOP-0003 Publicar una ficha]] · ejemplo: [[MUE-0001 Organizador - Proveedor Ejemplo UE (EJEMPLO)]]
+[[SOP-0001 Validar un producto]] · [[SOP-0003 Publicar una ficha]]

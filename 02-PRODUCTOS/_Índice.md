@@ -14,7 +14,6 @@ En una frase: una nota por producto; la subcarpeta indica la fase del embudo.
 
 - Tablero: [[Embudo de productos]]
 - Cómo validar: [[SOP-0001 Validar un producto]]
-- Ejemplo: [[PRD-0001 Organizador de cables (EJEMPLO)]]
 
 ## Notas de esta carpeta
 ```base
@@ -39,7 +38,4 @@ views:
 <!-- merovan:auto:start -->
 | Producto | Estado |
 |---|---|
-| [[PRD-0001 Organizador de cables (EJEMPLO)]] | En test |
-| [[PRD-0002 Lámpara de lectura recargable]] | Candidato |
-| [[PRD-0003 SyncParty]] | Idea |
 <!-- merovan:auto:end -->

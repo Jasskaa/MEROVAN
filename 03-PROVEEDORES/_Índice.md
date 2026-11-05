@@ -12,8 +12,6 @@ tags: [inicio]
 
 En una frase: fichas de proveedor (PRV), muestras (MUE), incidencias y comparativas.
 
-- [[PRV-0001 Proveedor Ejemplo UE (EJEMPLO)]]
-- [[MUE-0001 Organizador - Proveedor Ejemplo UE (EJEMPLO)]]
 - Cómo pedir muestra: [[SOP-0002 Pedir una muestra]]
 
 ## Notas de esta carpeta

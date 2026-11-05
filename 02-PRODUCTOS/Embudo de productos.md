@@ -18,7 +18,6 @@ kanban-plugin: board
 
 ## En test
 
-- [ ] [[PRD-0001 Organizador de cables (EJEMPLO)]]
 
 
 ## Escalando

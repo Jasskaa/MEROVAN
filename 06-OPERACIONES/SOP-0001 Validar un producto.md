@@ -24,4 +24,4 @@ Cada idea nueva de producto.
 ## Criterio de terminado
 Scorecard, checklist y margen completos; estado actualizado.
 ## Relacionado
-[[SOP-0002 Pedir una muestra]] · ejemplo: [[PRD-0001 Organizador de cables (EJEMPLO)]]
+[[SOP-0002 Pedir una muestra]]

@@ -12,8 +12,6 @@ tags: [inicio]
 
 En una frase: creatividades, guiones, creadores, campañas y calendario.
 
-- [[CRE-0001 Escritorio caótico en 2 s (EJEMPLO)]]
-- [[GUI-0001 Organizador - Antes y después (EJEMPLO)]]
 - Cómo lanzar un test: [[SOP-0004 Lanzar un test]]
 
 ## Notas de esta carpeta

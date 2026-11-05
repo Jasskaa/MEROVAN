@@ -12,7 +12,6 @@ tags: [inicio]
 
 En una frase: informes semanales (REP-AAAA-SNN) y mensuales (REP-AAAA-MM), en parte generados por la app.
 
-- [[REP-2026-S45]]
 
 ## Notas de esta carpeta
 ```base
