@@ -48,7 +48,8 @@ function walk(dir: string, root: string, out: string[] = []) {
 
 export function checkVault(root: string): VaultReport {
   const files = walk(root, root);
-  const notes = files.filter((f) => f.endsWith(".md"));
+  // CLAUDE.md at the root is the Claude Code guide, not a vault note.
+  const notes = files.filter((f) => f.endsWith(".md") && f !== "CLAUDE.md");
   const targets = new Set<string>();
   for (const f of files) {
     const noExt = f.replace(/\.[^/.]+$/, "");

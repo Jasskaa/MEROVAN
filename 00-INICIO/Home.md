@@ -15,6 +15,7 @@ tags: [inicio]
 En una frase: punto de entrada a la bóveda de MEROVAN, la memoria y el manual de operaciones de la agencia.
 
 ## Empieza aquí
+- [[Estado del proyecto]]: dónde estamos, qué funciona y el siguiente paso.
 - [[Guía de la bóveda]]: cómo está organizada y dónde va cada cosa. **Léela primero si eres nuevo.**
 - [[Convenciones]]: nombres, IDs, frontmatter, estados y etiquetas.
 - [[Cuadro de mando]]: productos por estado, decisiones pendientes, muestras e incidencias.
