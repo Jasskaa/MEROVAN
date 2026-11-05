@@ -58,5 +58,6 @@ tiempo para cerrar proveedor y muestra. Por separado no llega al margen; en pack
 - **Rodillo**: marca **Inodorina**, de Rinaldo Franco S.p.A. (PRV-0004), Via Fratelli Cervi 2, 20090 Trezzano sul Naviglio (MI), Italia,
   distribuida por BigBuy ([tienda BigBuy](https://pets-bigbuy.myshopify.com/collections/well-being-and-hygiene/products/pet-hair-remover-roller-inodorina), PVP 14,64 €).
   Confirmar que es reutilizable y su precio mayorista: con ese PVP el margen a 15,95 € no sale; habría que subir precio o cambiar de modelo.
-- Imágenes: **ilustrativas generadas con IA** (Canva), 800×800. Cambiarlas por fotos reales de la muestra o del proveedor.
+- Imágenes: **ilustrativas generadas con IA** (Canva), 1200×1200, copia en `10-RECURSOS/Adjuntos/Productos/` y diseño de trabajo en Canva
+  ([Base cuadrada crema para productos](https://canva.link/xuvhr5thbvmov5l)). Cambiarlas por fotos reales de la muestra o del proveedor.
 - Para la prueba se publicaron con stock 0 (no se pueden comprar). Al despublicar se vuelven a borrador, sin GPSR ni imágenes.

@@ -14,7 +14,7 @@ En una frase: lo que Jaska tiene que configurar para que los agentes trabajen, p
 
 ## Datos de la app
 <!-- merovan:auto:start -->
-_Espejo del Centro de configuración del panel (0/17 hechos). Las claves nunca se escriben aquí._
+_Espejo del Centro de configuración del panel (1/17 hechos). Las claves nunca se escriben aquí._
 
 ### ☐ 1. Forma jurídica, gestoría y alta de IVA · gestión externa
 TikTok Shop en España exige empresa registrada con NIF/IVA; Stripe y Meta piden datos de empresa para cobrar y verificar.
@@ -66,7 +66,7 @@ Los agentes razonan con Claude. Sin clave funcionan en modo simulado con respues
 
 - **Tiempo:** 10 min · **Dónde:** .env.local: MEROVAN_ANTHROPIC_API_KEY · **Prueba:** Agentes → Sistema muestra "IA conectada" y una ejecución del Orquestador termina en «ok»
 
-### ◐ 6. Clave de servicio de Supabase
+### ☑ 6. Clave de servicio de Supabase
 Permite altas de equipo, confirmar pagos y que los agentes y la tarea diaria trabajen sin sesión abierta.
 
 1. supabase.com → proyecto merovan-dev → Project Settings → API Keys → Secret keys.

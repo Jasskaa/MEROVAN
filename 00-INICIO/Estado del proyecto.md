@@ -12,7 +12,16 @@ tags: [inicio]
 
 En una frase: dónde estamos, qué funciona y cuál es el siguiente paso; Claude Code lo lee al empezar cada sesión (ver `CLAUDE.md`).
 
-_Última actualización: 5 de noviembre de 2026._
+_Última actualización: 5 de noviembre de 2026 (tarde)._
+
+## ⚠️ Ahora mismo: prueba de publicación activa
+Los 3 productos (PRD-0001, PRD-0002, PRD-0003) están **publicados en https://merovan.vercel.app como prueba**:
+GPSR de los proveedores previstos (Inodorina/Rinaldo Franco y Relaxdays) marcado «pendiente de confirmar», imagen ilustrativa
+generada con IA (1200×1200) y **stock 0** (nadie puede comprarlos). Ver [[Investigación de productos noviembre 2026]].
+
+**Cuando Jaska diga «despublica»**, dejarlos como antes de la prueba: `publish_status = 'borrador'` (estado `idea`),
+`gpsr_manufacturer/address/contact/warnings = null`, borrar sus filas de `product_media` y sus archivos en el bucket
+`product-media`, stock 0, precios y textos sin cambios. Los proveedores PRV-0003 (Relaxdays) y PRV-0004 (Inodorina) se quedan.
 
 ## Hecho
 - **Bóveda de Obsidian** con convenciones, índices, plantillas, roadmap y exportador automático desde la app.
@@ -32,6 +41,10 @@ _Última actualización: 5 de noviembre de 2026._
 4. Límites en Panel → Agentes → Límites (anuncios, muestras, pedidos, reembolsos).
 5. Trámites largos: empresa/NIF (gestoría), textos legales, Meta Business, TikTok for Developers, TikTok Shop.
 6. En Vercel, como **Secret**: las claves anteriores y `CRON_SECRET`. En Supabase: Site URL = https://merovan.vercel.app.
+
+## Herramientas
+- Portal sin commits: herramientas `merovan` (MCP) o `npm run --silent merovan -- <herramienta> '<json>'` desde `_sistema/merovan`.
+- Claves en `.env.local`: Supabase (URL, anónima y **servicio** ✅), CRON ✅; faltan IA y Stripe. En Vercel: URL y anónima (Config) y servicio (Secret) ✅.
 
 ## Siguiente paso
 - **Con la clave de IA**: primera ejecución real del Jefe de operaciones + «Procesar pendientes», revisar Investigación y Bandeja,
