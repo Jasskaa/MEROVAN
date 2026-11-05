@@ -25,7 +25,9 @@ export async function addToCart(formData: FormData) {
 }
 
 export async function setQuantity(variantId: string, formData: FormData) {
-  await rpcCart(variantId, Number(formData.get("qty") ?? 0), false);
+  // "set" comes from the −, + and Quitar buttons; "qty" from the typed amount with "Actualizar".
+  const value = formData.get("set") ?? formData.get("qty") ?? 0;
+  await rpcCart(variantId, Math.max(0, Math.min(20, Number(value) || 0)), false);
 }
 
 /** Creates the order from the cart (database prices) and sends the buyer to Stripe Checkout. */

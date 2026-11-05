@@ -34,7 +34,7 @@ Este repositorio es **a la vez la bóveda de Obsidian y el código**.
 
 ## Dónde está desplegado
 - Producción temporal: **https://merovan.vercel.app** (Vercel, raíz `_sistema/merovan`, despliegue automático al hacer push a `main`).
-- En Vercel solo están `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` (tipo Config). El resto de claves irán como **Secret**.
+- En Vercel: `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` (Config) y `SUPABASE_SERVICE_ROLE_KEY` (Secret). El resto de claves irán como **Secret**.
 - Base de datos: la misma `merovan-dev` en local y en Vercel. El proyecto `cps-fit-dev` está pausado a petición de Jaska: no lo toques.
 
 ## Reglas que no se negocian

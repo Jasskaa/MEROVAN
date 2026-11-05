@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SHELL } from "@/components/store/shell";
 import { notFound } from "next/navigation";
 import { BuyBox } from "@/components/store/buy-box";
 import { Gallery } from "@/components/store/gallery";
@@ -62,13 +63,13 @@ export default async function ProductPage({ params, searchParams }: {
 
   return (
     <main className="pb-24 sm:pb-0">
-      <nav aria-label="Ruta" className="mx-auto max-w-7xl px-4 pt-6 text-xs text-stone sm:px-6">
+      <nav aria-label="Ruta" className={`${SHELL} pt-6 text-xs text-stone`}>
         <Link href="/" className="hover:text-ink">Inicio</Link> <span className="mx-1.5">/</span>
         <Link href="/#productos" className="hover:text-ink">Colección</Link> <span className="mx-1.5">/</span>
         <span className="text-ink">{p.name}</span>
       </nav>
 
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-8 sm:px-6 lg:grid-cols-[1.25fr_1fr] lg:gap-16 lg:py-12">
+      <div className={`${SHELL} grid gap-8 py-6 sm:gap-10 sm:py-8 lg:grid-cols-[1.25fr_1fr] lg:gap-16 lg:py-12`}>
         <Gallery items={media} name={p.name} />
 
         <div className="lg:sticky lg:top-24 lg:self-start">
@@ -134,7 +135,7 @@ export default async function ProductPage({ params, searchParams }: {
       </div>
 
       {related.length > 0 && (
-        <section className="mx-auto max-w-7xl border-t border-line px-4 py-20 sm:px-6">
+        <section className={`${SHELL} border-t border-line py-16 sm:py-20`}>
           <h2 className="mb-10 font-display text-4xl uppercase sm:text-5xl">También te puede gustar</h2>
           <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
             {related.map((r) => <ProductCard key={r.code} p={r} />)}

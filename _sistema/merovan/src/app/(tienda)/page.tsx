@@ -3,6 +3,7 @@ import Link from "next/link";
 import { IconChat, IconLock, IconReturn, IconTruck } from "@/components/store/icons";
 import { IconArrowUpRight } from "@/components/store/icons-extra";
 import { ImagePlaceholder, ProductCard, discountPct } from "@/components/store/product-card";
+import { SHELL } from "@/components/store/shell";
 import { publishedProducts } from "@/lib/catalog";
 import { eur } from "@/lib/format";
 import { trackView } from "@/lib/store";
@@ -41,16 +42,15 @@ export default async function StoreHome({ searchParams }: { searchParams: Promis
   const q = params.q?.trim();
   const all = await publishedProducts();
   const results = q ? await publishedProducts(q) : all;
-  const [featured, ...others] = all;
-  const latest = all.slice(0, 4);
+  const [featured] = all;
   const deals = all.filter((p) => discountPct(p.price_cents, p.compare_at_cents));
 
   return (
-    <div className="mx-auto max-w-7xl px-3 sm:px-6">
+    <div className={SHELL}>
       {/* Hero: giant brand word behind the featured product */}
       <section className="relative mt-3 overflow-hidden rounded-[28px] bg-ink text-ivory sm:mt-5">
         <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_70%,rgba(229,213,188,0.14),transparent_60%)]" />
-        <p aria-hidden className="relative select-none pt-6 text-center font-display text-[24vw] leading-[0.82] tracking-tight text-ivory sm:pt-8 lg:text-[15.5rem]">
+        <p aria-hidden className="relative select-none pt-6 text-center font-display text-[23vw] leading-[0.82] tracking-tight text-ivory sm:pt-8 lg:text-[17vw] 2xl:text-[16rem]">
           MEROVAN
         </p>
 
@@ -78,84 +78,25 @@ export default async function StoreHome({ searchParams }: { searchParams: Promis
               {featured.price_cents != null && <p className="text-sm tabular-nums text-ivory/70">{eur(featured.price_cents)}</p>}
             </div>
           )}
-          {others.length > 0 && (
-            <div className="flex gap-3 lg:justify-end">
-              {others.slice(0, 3).map((p) => (
-                <Link key={p.code} href={`/p/${p.slug}`} title={p.name} className="h-20 w-20 overflow-hidden rounded-2xl border border-white/10 bg-white/5 transition hover:border-champagne sm:h-24 sm:w-24">
-                  {p.images[0] ? <img src={p.images[0]} alt={p.name} className="h-full w-full object-cover" /> : <ImagePlaceholder dark compact className="h-full w-full" />}
-                </Link>
-              ))}
-            </div>
-          )}
+          {/* Empty third column keeps the featured name centred under the image */}
+          <div aria-hidden className="hidden lg:block" />
         </div>
       </section>
 
-      {/* Intro + real facts */}
-      <section className="grid gap-10 px-2 py-16 sm:py-20 lg:grid-cols-2 lg:items-end">
-        <h1 className="text-4xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
-          Descubre lo útil,<br /><span className="text-stone">sin complicaciones.</span>
-        </h1>
-        <div>
-          <p className="max-w-md text-stone">Elegimos pocos productos y los probamos antes de venderlos. Si algo no te convence, tienes 14 días para devolverlo.</p>
-          <dl className="mt-8 flex flex-wrap gap-x-12 gap-y-4">
-            <div><dd className="text-4xl font-semibold tabular-nums">{all.length}</dd><dt className="text-xs text-stone">productos seleccionados</dt></div>
-            <div><dd className="text-4xl font-semibold">14</dd><dt className="text-xs text-stone">días de devolución</dt></div>
-            <div><dd className="text-4xl font-semibold">UE</dd><dt className="text-xs text-stone">envío desde Europa</dt></div>
-          </dl>
-        </div>
-      </section>
-
-      {/* Latest */}
-      {!q && latest.length > 0 && (
-        <section id="novedades" className="scroll-mt-24 pb-20">
-          <div className="mb-8 flex flex-wrap items-end justify-between gap-4 px-1">
-            <h2 className="font-display text-5xl uppercase leading-none sm:text-7xl">Novedades</h2>
-            <PillButton href="#productos" dark>Ver todo</PillButton>
-          </div>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4">
-            {latest.map((p, i) => <ProductCard key={p.code} p={p} priority={i < 4} />)}
-          </div>
-        </section>
-      )}
-
-      {/* Split promo */}
-      {featured && !q && (
-        <section className="grid overflow-hidden rounded-[28px] bg-ink text-ivory lg:grid-cols-2">
-          <div className="flex flex-col justify-between gap-10 p-8 sm:p-12">
-            <div>
-              <h2 className="font-display text-5xl uppercase leading-[0.95] sm:text-6xl">Todo lo que necesitas,<br /><span className="text-champagne">nada que sobre</span></h2>
-              <p className="mt-5 max-w-sm text-sm leading-relaxed text-ivory/70">Cada producto pasa nuestra revisión de calidad, proveedor y seguridad antes de llegar a la tienda.</p>
-            </div>
-            <div className="flex flex-wrap items-end gap-3">
-              {all.slice(0, 2).map((p) => (
-                <Link key={p.code} href={`/p/${p.slug}`} className="h-24 w-24 overflow-hidden rounded-2xl bg-white/5">
-                  {p.images[0] ? <img src={p.images[0]} alt={p.name} className="h-full w-full object-cover" /> : <ImagePlaceholder dark compact className="h-full w-full" />}
-                </Link>
-              ))}
-              <div className="ml-auto"><PillButton href={`/p/${featured.slug}`}>Descubrir</PillButton></div>
-            </div>
-          </div>
-          <div className="relative min-h-80 bg-ink-soft">
-            {(featured.images[1] ?? featured.images[0])
-              ? <img src={featured.images[1] ?? featured.images[0]} alt={featured.name} className="absolute inset-0 h-full w-full object-cover" />
-              : <ImagePlaceholder dark className="absolute inset-0" />}
-          </div>
-        </section>
-      )}
-
-      {/* All products / search results */}
-      <section id="productos" className="scroll-mt-24 py-20">
+      {/* All products / search results: the only section right under the hero ("Novedades" in the menu lands here too) */}
+      <span id="novedades" className="block scroll-mt-24" aria-hidden />
+      <section id="productos" className="scroll-mt-24 py-16 sm:py-20">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4 px-1">
           <h2 className="font-display text-5xl uppercase leading-none sm:text-7xl">{q ? `«${q}»` : "Todos los productos"}</h2>
-          <form action="/#productos" className="flex items-center gap-2 rounded-full bg-sand px-4 py-2">
-            <input name="q" defaultValue={q} placeholder="Buscar productos" aria-label="Buscar productos" className="w-44 bg-transparent text-sm outline-none placeholder:text-stone" />
+          <form action="/#productos" className="flex w-full items-center gap-2 rounded-full bg-sand px-4 py-2.5 sm:w-auto">
+            <input name="q" defaultValue={q} placeholder="Buscar productos" aria-label="Buscar productos" className="w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-stone sm:w-56" />
             {q && <Link href="/#productos" className="text-xs text-stone hover:text-ink">Limpiar</Link>}
           </form>
         </div>
         {results.length === 0 ? (
           <p className="rounded-2xl bg-sand py-20 text-center text-stone">{q ? "No hay productos que coincidan." : "Estamos preparando el catálogo. Vuelve pronto."}</p>
         ) : (
-          <div className="grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-4 md:grid-cols-3 xl:grid-cols-4">
             {results.map((p) => <ProductCard key={p.code} p={p} />)}
           </div>
         )}
@@ -179,21 +120,8 @@ export default async function StoreHome({ searchParams }: { searchParams: Promis
         ))}
       </ul>
 
-      {/* About */}
-      <section id="nosotros" className="scroll-mt-24 py-20 sm:py-28">
-        <p aria-hidden className="select-none text-center font-display text-[18vw] uppercase leading-none tracking-tight text-ink/[0.05] lg:text-[11rem]">Bienvenido</p>
-        <div className="mt-8 grid gap-6 border-t border-line pt-8 text-sm sm:grid-cols-[120px_200px_1fr]">
-          <span className="text-stone">001</span>
-          <span className="font-medium">Sobre MEROVAN</span>
-          <div className="max-w-xl space-y-4 leading-relaxed text-ink/80">
-            <p>MEROVAN es una tienda online con una idea sencilla: pocos productos, bien elegidos. Antes de publicar cualquier artículo pedimos muestras y comprobamos su calidad, el embalaje y los plazos de entrega.</p>
-            <p>Trabajamos con almacenes en la Unión Europea para que tu pedido llegue sin aduanas, con seguimiento y con la garantía de devolución de 14 días.</p>
-          </div>
-        </div>
-      </section>
-
       {/* FAQ */}
-      <section id="ayuda" className="scroll-mt-24 pb-20">
+      <section id="ayuda" className="scroll-mt-24 py-20 sm:py-24">
         <div className="grid gap-10 lg:grid-cols-[1fr_1.4fr]">
           <h2 className="font-display text-5xl uppercase leading-none sm:text-7xl">Preguntas<br />frecuentes</h2>
           <div className="space-y-3">

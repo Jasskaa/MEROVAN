@@ -36,7 +36,7 @@ generada con IA (1200×1200) y **stock 0** (nadie puede comprarlos). Ver [[Inves
 
 ## Pendiente de Jaska (ver [[Configuración pendiente]])
 1. `MEROVAN_ANTHROPIC_API_KEY` (con límite de gasto en la consola de Anthropic) → los agentes trabajan de verdad.
-2. `SUPABASE_SERVICE_ROLE_KEY` → altas de equipo, confirmación de pagos y tarea diaria.
+2. ~~`SUPABASE_SERVICE_ROLE_KEY`~~ ✅ hecha (local y Vercel, 5/11/2026).
 3. Stripe en modo prueba (`STRIPE_SECRET_KEY`, luego webhook) → compra de prueba de extremo a extremo.
 4. Límites en Panel → Agentes → Límites (anuncios, muestras, pedidos, reembolsos).
 5. Trámites largos: empresa/NIF (gestoría), textos legales, Meta Business, TikTok for Developers, TikTok Shop.
