@@ -31,7 +31,7 @@ _Actualizado desde la app. No escribas dentro de esta zona: se regenera en cada 
 | Dato | Valor |
 |---|---|
 | Estado | Idea |
-| Tienda | borrador |
+| Tienda | publicado |
 | Precio | 15,95 € |
 | Margen de contribución | 4,02 € |
 | ROAS de equilibrio / objetivo | 3,28 / 4,59 |

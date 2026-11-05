@@ -49,3 +49,14 @@ tiempo para cerrar proveedor y muestra. Por separado no llega al margen; en pack
 - [Leroy Merlin — caja 64 Relaxdays](https://www.leroymerlin.es/productos/relaxdays-caja-organizadora-para-adornos-de-navidad-almacenaje-64-compartimentos-31-x-30-x-30-cm-transparente-rojo-92591793.html) · [Lightinthebox — caja 64 a 21,99 €](https://www.lightinthebox.com/es/p/caja-de-almacenamiento-de-adornos-navidenos-con-64-compartimentos-contenedores-de-almacenamiento-navidenos-de-30x30x30-cm-organizador-de-adornos-con-c_p16575023.html) · [Leroy Merlin — bolsas de árbol](https://www.leroymerlin.es/productos/bolsa-de-almacenamiento-para-arboles-de-navidad-a-prueba-de-polvo-impermeable-de-gran-capacidad-para-guardar-ropa-93108717.html) · [Made-in-China — bolsa 600D](https://m.made-in-china.com/product/600d-Oxford-Christmas-Tree-Storage-Bag-with-Wheels-and-Handles-2145290065.html)
 - [Lidl — calendario fieltro 4,49 €](https://www.lidl.es/p/livarno-home-calendario-de-adviento-de-fieltro/p100395184) · [Amazon.es — Brubaker madera 29,99 €](https://www.amazon.es/BRUBAKER-Calendario-Adviento-Reutilizable-Rellenar/dp/B08KT3BW4Y)
 - [Compradicción — rodillo quitapelos](https://www.compradiccion.com/mascotas/pelos-tu-mascota-no-estaran-todas-partes-este-rodillo-quitapelos-que-vendido-amazon) · [Chollómetro — rodillo de gel](https://www.chollometro.com/ofertas/rodillo-quitapelos-reutilizable-de-gel-para-mascotas-lavable-sin-recambios-adhesivos-elimina-pelos-de-perros-y-gatos-1944008) · [Action — cepillo 1,79 €](https://www.action.com/es-es/p/3208460/cepillo-para-animales-con-boton-para-eliminar-el-pelo/) · [Alibaba — organizadores](https://www.alibaba.com/discover/kitchen-undersink-storage.html)
+
+## Proveedores y GPSR (5/11/2026, prueba de publicación)
+- **Kit de Navidad**: caja de 64 bolas de **Relaxdays GmbH** (PRV-0003), Berliner Str. 191, 06116 Halle (Saale), Alemania
+  ([ficha GPSR en XXXLutz](https://www.xxxlutz.at/p/relaxdays-weihnachtskugel-aufbewahrungsbox-800001191495),
+  [producto en relaxdays.de](https://relaxdays.de/produkte/anlasse/weihnachten/aufbewahrungsboxen-weihnachtskugeln/weihnachtskugel-aufbewahrungsbox-2er-set-10044026.html)).
+  Bolsa del árbol: proveedor por elegir. Pedir a Relaxdays precio de revendedor.
+- **Rodillo**: marca **Inodorina**, de Rinaldo Franco S.p.A. (PRV-0004), Via Fratelli Cervi 2, 20090 Trezzano sul Naviglio (MI), Italia,
+  distribuida por BigBuy ([tienda BigBuy](https://pets-bigbuy.myshopify.com/collections/well-being-and-hygiene/products/pet-hair-remover-roller-inodorina), PVP 14,64 €).
+  Confirmar que es reutilizable y su precio mayorista: con ese PVP el margen a 15,95 € no sale; habría que subir precio o cambiar de modelo.
+- Imágenes: **ilustrativas generadas con IA** (Canva), 800×800. Cambiarlas por fotos reales de la muestra o del proveedor.
+- Para la prueba se publicaron con stock 0 (no se pueden comprar). Al despublicar se vuelven a borrador, sin GPSR ni imágenes.
