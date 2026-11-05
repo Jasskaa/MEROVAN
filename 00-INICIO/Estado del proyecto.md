@@ -44,4 +44,4 @@ _Última actualización: 5 de noviembre de 2026._
 - Integraciones externas sin conectar (TikTok, Meta, anuncios, proveedores, correo, reembolsos en Stripe): al aprobar fuera de
   simulación fallan con «Integración no conectada» y se hacen a mano.
 - Sin dominio propio, sin textos legales definitivos, sin 2FA y con copias de seguridad manuales.
-- Base de datos y bóveda limpias (5/11/2026): sin productos, pedidos ni datos de prueba; se empieza de cero con productos reales.
+- Base de datos y bóveda limpias (5/11/2026). Primeros borradores (sin publicar, costes estimados): PRD-0001 y PRD-0002 rodillo quitapelos, PRD-0003 Kit para guardar la Navidad. Ver [[Investigación de productos noviembre 2026]].

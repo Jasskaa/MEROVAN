@@ -38,4 +38,7 @@ views:
 <!-- merovan:auto:start -->
 | Producto | Estado |
 |---|---|
+| [[PRD-0001 Rodillo quitapelos reutilizable]] | Idea |
+| [[PRD-0002 Rodillo quitapelos reutilizable (pack de 2)]] | Idea |
+| [[PRD-0003 Kit para guardar la Navidad]] | Idea |
 <!-- merovan:auto:end -->
