@@ -3,7 +3,9 @@
 import type { Guardrails, Usage } from "./policy";
 import type { ListingInput } from "@/lib/domain/listing";
 import type { DecisionRules } from "@/lib/domain/decision";
+import type { ProfitOrder } from "@/lib/domain/profit";
 import type { AdRow } from "./ads";
+import type { ReconRow } from "./ops";
 import type { MarginDefaults } from "./research";
 
 export interface ProposalRow {
@@ -41,6 +43,14 @@ export const ANGLES = ["problema", "demostracion", "antes_despues", "comparacion
 export interface ScriptInput { productCode: string; angle: (typeof ANGLES)[number]; hook: string; problem: string; demo: string; proof: string; offer: string; cta: string; containsAi: boolean; ejemplo: boolean }
 export interface CreativeView { code: string; product: string; hook: string; angle: string; status: string; contains_ai: boolean; platforms: string[]; script: string | null }
 export interface CalendarEntry { id: string; day: string; platform: string; title: string; caption: string; creative: string | null; done: boolean; proposal_id: string | null }
+
+export interface OpsOverview {
+  sin_pedido_proveedor: { number: number; total_cents: number; coste_estimado_cents: number; pagado: string }[];
+  retrasados: { number: number; status: string; entrega_prometida: string }[];
+  tickets_abiertos: { number: number; type: string; subject: string; pedido: number | null; abierto: string; sin_respuesta: boolean }[];
+  devoluciones: { id: string; pedido: number; status: string; refund_cents: number; reason: string }[];
+}
+export interface FinanceData { orders: ProfitOrder[]; adSpend: Record<string, number>; expensesCents: number; codes: Record<string, string>; recon: ReconRow[] }
 
 export interface AgentStore {
   getState(): Promise<{ killSwitch: boolean; dryRun: boolean }>;
@@ -92,6 +102,9 @@ export interface AgentStore {
   adRows(days: number): Promise<AdRow[]>;
   decisionRules(): Promise<DecisionRules>;
   runDecisions(): Promise<{ code: string; decision: string }[]>;
+
+  opsOverview(): Promise<OpsOverview>;
+  finance(from: string, to: string): Promise<FinanceData>;
 }
 
 export const DEFAULT_MARGIN: MarginDefaults = {
@@ -121,6 +134,8 @@ export class MemoryStore implements AgentStore {
   calendar: (CalendarEntry & { ejemplo: boolean })[] = [];
   ads: AdRow[] = [];
   decisions: { code: string; decision: string }[] = [];
+  ops: OpsOverview = { sin_pedido_proveedor: [], retrasados: [], tickets_abiertos: [], devoluciones: [] };
+  fin: FinanceData = { orders: [], adSpend: {}, expensesCents: 0, codes: {}, recon: [] };
   refunds = 0;
   private seq = 0;
   private id = (p: string) => `${p}-${++this.seq}`;
@@ -250,4 +265,7 @@ export class MemoryStore implements AgentStore {
   async adRows() { return this.ads.map((a) => ({ ...a })); }
   async decisionRules() { const { DEFAULT_RULES } = await import("@/lib/domain/decision"); return { ...DEFAULT_RULES }; }
   async runDecisions() { return [...this.decisions]; }
+
+  async opsOverview() { return structuredClone(this.ops); }
+  async finance() { return structuredClone(this.fin); }
 }

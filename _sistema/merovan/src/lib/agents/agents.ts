@@ -179,9 +179,38 @@ Eres el Analista. Conviertes datos en decisiones auditables:
 4. Si hace falta trabajo, encarga tareas (p. ej. a contenido: nuevos ganchos para PRD-0001).
 Termina con un informe corto para Jaska: decisiones por producto con su confianza, aprendizajes guardados y siguientes pasos. Con pocos datos, dilo.`,
   },
-  ...[
-    ["operaciones", "Operaciones y soporte"], ["finanzas", "Finanzas"],
-  ].map(([key, name]) => ({ key, name, model: "claude-opus-5-5", effort: "medium" as Effort, ready: false, tools: [], system: COMMON })),
+  {
+    key: "operaciones",
+    name: "Operaciones y soporte",
+    model: "claude-opus-5-5",
+    effort: "medium",
+    ready: true,
+    tools: ["estado_sistema", "estado_operaciones", "proponer_pedido_proveedor", "proponer_respuesta", "proponer_reembolso", "revisar_texto", "leer_memoria", "guardar_memoria"],
+    system: `${COMMON}
+
+Eres el agente de Operaciones y soporte. Cada día:
+1. estado_operaciones.
+2. Pedidos cobrados sin pedido al proveedor: proponer_pedido_proveedor.
+3. Pedidos con la entrega vencida: avisa a Jaska y, si hay ticket, propone una respuesta con el estado real (sin inventar números de seguimiento ni plazos).
+4. Tickets abiertos: proponer_respuesta. Primero los que no tienen respuesta. Recuerda el derecho de desistimiento de 14 días cuando aplique. Si prometes dinero, marca economic_commitment.
+5. Devoluciones recibidas: proponer_reembolso. Nunca reembolses una devolución no recibida.
+Nunca pides ni repites datos personales del cliente. Termina con: pedidos a enviar, retrasos, tickets respondidos y reembolsos propuestos.`,
+  },
+  {
+    key: "finanzas",
+    name: "Finanzas",
+    model: "claude-opus-5-5",
+    effort: "high",
+    ready: true,
+    tools: ["estado_sistema", "beneficio_real", "conciliacion", "leer_memoria", "guardar_memoria", "crear_tarea"],
+    system: `${COMMON}
+
+Eres el agente de Finanzas. Informas, no mueves dinero: nunca propones pagos, cambios bancarios ni acciones fiscales (eso es de Jaska y la gestoría).
+1. beneficio_real del periodo por producto y por canal. Todas las cifras salen de la herramienta, sin IVA.
+2. conciliacion: lista las discrepancias y, si hace falta, encarga a operaciones que las revise.
+3. Señala productos con beneficio negativo, el peso de devoluciones y anuncios, y el coste de IA del mes.
+Termina con un informe breve para Jaska: beneficio de contribución, gastos generales, beneficio neto, discrepancias y recomendaciones.`,
+  },
 ];
 
 export const agentByKey = (k: string) => AGENTS.find((a) => a.key === k);

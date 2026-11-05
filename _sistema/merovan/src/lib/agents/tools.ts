@@ -5,6 +5,7 @@ import { ACTION_TYPES } from "./policy";
 import { validateListing } from "@/lib/domain/listing";
 import { CRITERIA } from "@/lib/domain/product";
 import { adKey, reviewAd } from "./ads";
+import { profitSummary, reconcile } from "./ops";
 import { propose } from "./pipeline";
 import { type Offer, rankOffers, recommendPrice, scoreCandidate } from "./research";
 import { ANGLES, type AgentStore } from "./store";
@@ -430,6 +431,85 @@ export const TOOLS: AgentTool[] = [
     schema: z.object({}),
     jsonSchema: obj({}),
     run: ({ store }) => store.runDecisions(),
+  },
+  {
+    name: "estado_operaciones",
+    description: "Operaciones: pedidos cobrados sin pedido al proveedor, pedidos con la entrega prometida vencida, tickets abiertos y devoluciones en curso. Sin datos personales.",
+    schema: z.object({}),
+    jsonSchema: obj({}),
+    externalData: true,
+    run: ({ store }) => store.opsOverview(),
+  },
+  {
+    name: "proponer_pedido_proveedor",
+    description: "Operaciones: propone enviar al proveedor principal un pedido de cliente ya cobrado. El importe sale del coste registrado; respeta el tope diario de pedidos a proveedor.",
+    schema: z.object({ order: z.number().int().positive() }),
+    jsonSchema: obj({ order: { type: "integer", description: "Número de pedido" } }, ["order"]),
+    run: async (ctx, i) => {
+      const o = (await ctx.store.opsOverview()).sin_pedido_proveedor.find((x) => x.number === i.order);
+      if (!o) throw new Error("Ese pedido no está cobrado o ya tiene pedido al proveedor");
+      if (!o.coste_estimado_cents) throw new Error("El pedido no tiene coste de proveedor registrado: revisa el producto");
+      return propose(ctx.store, {
+        agent: ctx.agent, runId: ctx.runId, taskId: ctx.taskId, actionType: "pedido_proveedor", title: `Pedido al proveedor del pedido #${o.number}`,
+        reason: `Pedido cobrado el ${o.pagado.slice(0, 10)} sin pedido al proveedor`, payload: { order: o.number, amount_cents: o.coste_estimado_cents },
+        idempotencyKey: `pedido_proveedor:${o.number}`,
+      });
+    },
+  },
+  {
+    name: "proponer_respuesta",
+    description:
+      "Operaciones: propone la respuesta a un ticket. Tono amable y concreto, con plazos reales. Marca economic_commitment si promete dinero (reembolso, descuento, reenvío gratis): " +
+      "entonces siempre necesita aprobación.",
+    schema: z.object({ ticket: z.number().int().positive(), text: z.string().min(20).max(3000), economic_commitment: z.boolean() }),
+    jsonSchema: obj({ ticket: { type: "integer" }, text: { type: "string" }, economic_commitment: { type: "boolean" } }, ["ticket", "text", "economic_commitment"]),
+    run: async (ctx, i) => {
+      const t = (await ctx.store.opsOverview()).tickets_abiertos.find((x) => x.number === i.ticket);
+      if (!t) throw new Error("Ticket no encontrado o ya resuelto");
+      return propose(ctx.store, {
+        agent: ctx.agent, runId: ctx.runId, taskId: ctx.taskId, actionType: "responder_cliente", title: `Respuesta al ticket #${t.number}: ${t.subject}`,
+        reason: `Ticket ${t.type} abierto el ${t.abierto.slice(0, 10)}${t.sin_respuesta ? " sin primera respuesta" : ""}`,
+        payload: { ticket: t.number, text: i.text, economic_commitment: i.economic_commitment },
+        idempotencyKey: `respuesta:${t.number}:${new Date().toISOString().slice(0, 10)}`,
+      });
+    },
+  },
+  {
+    name: "proponer_reembolso",
+    description: "Operaciones: propone reembolsar una devolución recibida. El importe es el registrado en la devolución; por encima del límite sin aprobación, siempre la aprueba Jaska.",
+    schema: z.object({ return_id: z.string(), reason: z.string().min(10).max(1000) }),
+    jsonSchema: obj({ return_id: { type: "string" }, reason: { type: "string" } }, ["return_id", "reason"]),
+    run: async (ctx, i) => {
+      const r = (await ctx.store.opsOverview()).devoluciones.find((x) => x.id === i.return_id);
+      if (!r) throw new Error("Devolución no encontrada o ya cerrada");
+      if (r.status !== "recibida") throw new Error(`La devolución está «${r.status}»: solo se reembolsa cuando el producto se ha recibido`);
+      if (r.refund_cents <= 0) throw new Error("La devolución no tiene importe a reembolsar");
+      return propose(ctx.store, {
+        agent: ctx.agent, runId: ctx.runId, taskId: ctx.taskId, actionType: "reembolso", title: `Reembolso del pedido #${r.pedido}`,
+        reason: i.reason, payload: { return_id: r.id, order: r.pedido, amount_cents: r.refund_cents }, idempotencyKey: `reembolso:${r.id}`,
+      });
+    },
+  },
+  {
+    name: "beneficio_real",
+    description: "Finanzas: beneficio real del periodo por producto o canal (sin IVA): ventas netas, reembolsos, coste, comisiones, devoluciones, contracargos y anuncios; y beneficio neto tras gastos generales.",
+    schema: z.object({ from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), by: z.enum(["product", "channel"]).default("product") }),
+    jsonSchema: obj({ from: { type: "string" }, to: { type: "string" }, by: { type: "string", enum: ["product", "channel"] } }, ["from", "to"]),
+    run: async ({ store }, i) => {
+      const f = await store.finance(i.from, i.to);
+      return profitSummary(f.orders, f.adSpend, f.expensesCents, f.codes, i.by);
+    },
+  },
+  {
+    name: "conciliacion",
+    description: "Finanzas: cruza pedidos, cobros, reembolsos y costes de proveedor del periodo y lista las discrepancias a revisar.",
+    schema: z.object({ from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }),
+    jsonSchema: obj({ from: { type: "string" }, to: { type: "string" } }, ["from", "to"]),
+    run: async ({ store }, i) => {
+      const f = await store.finance(i.from, i.to);
+      const issues = reconcile(f.recon);
+      return { pedidos_revisados: f.recon.length, discrepancias: issues };
+    },
   },
 ];
 

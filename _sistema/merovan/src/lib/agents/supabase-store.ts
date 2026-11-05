@@ -3,11 +3,12 @@ import { loadSettings, marginDefaults, type serviceClient } from "@/lib/admin";
 import type { createClient } from "@/lib/supabase/server";
 import type { Guardrails, Usage } from "./policy";
 import { runDecisionEngine } from "@/lib/decisions";
+import { loadFinance } from "@/lib/finance";
 import { DEFAULT_RULES, type DecisionRules } from "@/lib/domain/decision";
 import { computeMargin } from "@/lib/domain/margin";
 import type { AdRow } from "./ads";
 import type { MarginDefaults } from "./research";
-import type { AgentStore, CalendarEntry, CandidateRow, CreativeView, ScriptInput, NewCandidate, NicheInput, ProductSummary, ProposalRow, ResearchNiche, SupplierOfferView } from "./store";
+import type { AgentStore, CalendarEntry, FinanceData, OpsOverview, CandidateRow, CreativeView, ScriptInput, NewCandidate, NicheInput, ProductSummary, ProposalRow, ResearchNiche, SupplierOfferView } from "./store";
 
 type Db = Awaited<ReturnType<typeof createClient>> | NonNullable<ReturnType<typeof serviceClient>>;
 
@@ -292,4 +293,46 @@ export class SupabaseStore implements AgentStore {
     return { ...DEFAULT_RULES, ...((s.decision_rules as Partial<DecisionRules>) ?? {}) };
   }
   async runDecisions() { return runDecisionEngine(this.db); }
+
+  async opsOverview(): Promise<OpsOverview> {
+    const today = isoDay();
+    const [{ data: paid }, { data: late }, { data: tickets }, { data: returns }] = await Promise.all([
+      this.db.from("orders").select("number, total_cents, paid_at, order_items(quantity, unit_cost_cents), supplier_orders(id)").eq("status", "pagado").order("paid_at").limit(50),
+      this.db.from("orders").select("number, status, promised_delivery_on").in("status", ["pagado", "enviado_proveedor", "enviado"]).lt("promised_delivery_on", today).limit(50),
+      this.db.from("tickets").select("number, type, subject, created_at, first_response_at, orders(number)").neq("status", "resuelto").order("created_at").limit(50),
+      this.db.from("returns").select("id, status, refund_cents, reason, orders(number)").in("status", ["solicitada", "aprobada", "recibida"]).limit(50),
+    ]);
+    type Paid = { number: number; total_cents: number; paid_at: string; order_items: { quantity: number; unit_cost_cents: number | null }[]; supplier_orders: { id: string } | null };
+    return {
+      sin_pedido_proveedor: ((paid ?? []) as unknown as Paid[]).filter((o) => !o.supplier_orders).map((o) => ({
+        number: o.number, total_cents: o.total_cents, pagado: o.paid_at,
+        coste_estimado_cents: o.order_items.reduce((s, i) => s + (i.unit_cost_cents ?? 0) * i.quantity, 0),
+      })),
+      retrasados: (late ?? []).map((o) => ({ number: o.number, status: o.status, entrega_prometida: o.promised_delivery_on })),
+      tickets_abiertos: (tickets ?? []).map((t) => {
+        const r = t as unknown as { number: number; type: string; subject: string; created_at: string; first_response_at: string | null; orders: { number: number } | null };
+        return { number: r.number, type: r.type, subject: r.subject, pedido: r.orders?.number ?? null, abierto: r.created_at, sin_respuesta: !r.first_response_at };
+      }),
+      devoluciones: (returns ?? []).map((x) => {
+        const r = x as unknown as { id: string; status: string; refund_cents: number; reason: string; orders: { number: number } | null };
+        return { id: r.id, pedido: r.orders?.number ?? 0, status: r.status, refund_cents: r.refund_cents, reason: r.reason };
+      }),
+    };
+  }
+  async finance(from: string, to: string): Promise<FinanceData> {
+    const f = await loadFinance(this.db as Parameters<typeof loadFinance>[0], from, to);
+    const { data: exp } = await this.db.from("expenses").select("amount_cents, category").gte("spent_on", from).lte("spent_on", to);
+    return {
+      orders: f.profitOrders,
+      adSpend: f.adSpend,
+      // Ad spend is already counted per product from the imported metrics: not twice as an expense.
+      expensesCents: (exp ?? []).filter((e) => e.category !== "publicidad").reduce((s, e) => s + e.amount_cents, 0),
+      codes: Object.fromEntries([...f.products].map(([id, p]) => [id, p.code])),
+      recon: f.rows.map((o) => ({
+        number: o.number, channel: o.channel, status: o.status, total_cents: o.total_cents, payment_ref: o.payment_ref, external_ref: o.external_ref,
+        supplier_cost_cents: o.supplier_orders?.cost_cents ?? null,
+        refunded_cents: o.returns.filter((r) => r.status === "reembolsada").reduce((s, r) => s + r.refund_cents, 0),
+      })),
+    };
+  }
 }

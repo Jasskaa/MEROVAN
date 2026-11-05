@@ -141,6 +141,32 @@ export function demoModel(agent: string) {
           return { content: [say(`Prueba sin IA: motor de decisión recalculado. ${r.length ? r.map((x) => `${x.code}: ${x.decision}`).join(" · ") : "No hay productos en test con datos."} Detalle en Decisiones.`)] };
         },
       ]);
+    case "operaciones":
+      return new ScriptedModel([
+        () => ({ content: [callTool("estado_operaciones", {})] }),
+        (req) => {
+          const o = (lastResults(req)[0] ?? {}) as { sin_pedido_proveedor?: { number: number }[]; devoluciones?: { id: string; status: string }[]; retrasados?: unknown[]; tickets_abiertos?: unknown[] };
+          const calls = [
+            ...(o.sin_pedido_proveedor ?? []).slice(0, 3).map((x) => callTool("proponer_pedido_proveedor", { order: x.number })),
+            ...(o.devoluciones ?? []).filter((d) => d.status === "recibida").slice(0, 3).map((d) => callTool("proponer_reembolso", { return_id: d.id, reason: "Devolución recibida en buen estado dentro de plazo" })),
+          ];
+          const summary = `Prueba sin IA: ${o.sin_pedido_proveedor?.length ?? 0} pedidos sin enviar al proveedor, ${o.retrasados?.length ?? 0} retrasados, ${o.tickets_abiertos?.length ?? 0} tickets abiertos (las respuestas las redacta el agente con IA).`;
+          return { content: calls.length ? calls : [say(summary)] };
+        },
+        () => ({ content: [say("Prueba sin IA: propuestas de pedido al proveedor y de reembolso creadas en la Bandeja para lo que estaba pendiente.")] }),
+      ]);
+    case "finanzas": {
+      const from = `${new Date().toISOString().slice(0, 7)}-01`;
+      const to = new Date().toISOString().slice(0, 10);
+      return new ScriptedModel([
+        () => ({ content: [callTool("beneficio_real", { from, to, by: "product" }), callTool("conciliacion", { from, to })] }),
+        (req) => {
+          const [p, c] = lastResults(req) as [{ beneficio_contribucion_cents: number; gastos_generales_cents: number; beneficio_neto_cents: number }, { pedidos_revisados: number; discrepancias: unknown[] }];
+          const e = (n: number) => `${(n / 100).toFixed(2).replace(".", ",")} €`;
+          return { content: [say(`Prueba sin IA (${from} a ${to}): beneficio de contribución ${e(p?.beneficio_contribucion_cents ?? 0)}, gastos generales ${e(p?.gastos_generales_cents ?? 0)}, beneficio neto ${e(p?.beneficio_neto_cents ?? 0)}. Conciliación: ${c?.pedidos_revisados ?? 0} pedidos, ${c?.discrepancias.length ?? 0} discrepancias.`)] };
+        },
+      ]);
+    }
     case "fichas":
       // Read only: without AI it does not write texts into real products.
       return new ScriptedModel([
