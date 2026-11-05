@@ -1,0 +1,1 @@
+Inter, Cormorant Garamond y Anton: SIL Open Font License 1.1 (via Fontsource). Incluidas en el proyecto para que el build no dependa de Google Fonts.
