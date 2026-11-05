@@ -5,7 +5,7 @@ import { AGENTS } from "@/lib/agents/agents";
 import { hasApiKey } from "@/lib/agents/model";
 import { date } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
-import { createTestProposals, deleteDemoResearch, runAgentNow, toggleDryRun, toggleKillSwitch } from "./actions";
+import { createTestProposals, deleteDemoResearch, processTasks, runAgentNow, toggleDryRun, toggleKillSwitch } from "./actions";
 
 const usd = (micro: number) => `${(micro / 1_000_000).toFixed(2).replace(".", ",")} $`;
 
@@ -99,7 +99,12 @@ export default async function AgentsHome({ searchParams }: { searchParams: Promi
       </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card title="Tareas encargadas" actions={<Link href="/admin/agentes/actividad" className="text-xs underline-offset-4 hover:underline">Ver actividad</Link>}>
+        <Card title="Tareas encargadas" actions={
+          <span className="flex items-center gap-3">
+            {(staff.role === "owner" || staff.role === "producto") && <form action={processTasks}><button className="text-xs font-semibold underline-offset-4 hover:underline">Procesar pendientes</button></form>}
+            <Link href="/admin/agentes/actividad" className="text-xs underline-offset-4 hover:underline">Ver actividad</Link>
+          </span>
+        }>
           <Table head={["Fecha", "Para", "Tarea", "Estado"]}>
             {(tasks ?? []).map((t, i) => <tr key={i}><td>{date(t.created_at)}</td><td>{t.agent}</td><td>{t.title}</td><td><Badge>{t.status}</Badge></td></tr>)}
           </Table>

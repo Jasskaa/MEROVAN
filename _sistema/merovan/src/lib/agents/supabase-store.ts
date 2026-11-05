@@ -335,4 +335,24 @@ export class SupabaseStore implements AgentStore {
       })),
     };
   }
+
+  async claimTask() {
+    const now = new Date().toISOString();
+    const { data: candidates } = await this.db.from("agent_tasks").select("id, attempts, max_attempts")
+      .eq("status", "pendiente").or(`locked_until.is.null,locked_until.lt.${now}`).order("priority").order("created_at").limit(5);
+    for (const c of candidates ?? []) {
+      // Optimistic claim: only succeeds if nobody changed the task since we read it.
+      const { data } = await this.db.from("agent_tasks")
+        .update({ status: "en_curso", attempts: c.attempts + 1, locked_until: new Date(Date.now() + 15 * 60_000).toISOString() })
+        .eq("id", c.id).eq("status", "pendiente").eq("attempts", c.attempts)
+        .select("id, agent, title, instructions, attempts, max_attempts").maybeSingle();
+      if (data) return { id: data.id, agent: data.agent, title: data.title, instructions: data.instructions, attempts: data.attempts, maxAttempts: data.max_attempts };
+    }
+    return null;
+  }
+  async finishTask(id: string, status: string, result: Record<string, unknown>) {
+    // A task that goes back to the queue waits 10 minutes before its retry.
+    const lockedUntil = status === "pendiente" ? new Date(Date.now() + 10 * 60_000).toISOString() : null;
+    await this.db.from("agent_tasks").update({ status, result, locked_until: lockedUntil, ...(status === "fallida" ? { error: String(result.resumen ?? "") } : {}) }).eq("id", id);
+  }
 }

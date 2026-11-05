@@ -105,6 +105,10 @@ export interface AgentStore {
 
   opsOverview(): Promise<OpsOverview>;
   finance(from: string, to: string): Promise<FinanceData>;
+
+  /** Takes the oldest pending task (lease of 15 min) and counts the attempt; null when the queue is empty. */
+  claimTask(): Promise<{ id: string; agent: string; title: string; instructions: string; attempts: number; maxAttempts: number } | null>;
+  finishTask(id: string, status: "hecha" | "fallida" | "pendiente" | "bloqueada", result: Record<string, unknown>): Promise<void>;
 }
 
 export const DEFAULT_MARGIN: MarginDefaults = {
@@ -268,4 +272,17 @@ export class MemoryStore implements AgentStore {
 
   async opsOverview() { return structuredClone(this.ops); }
   async finance() { return structuredClone(this.fin); }
+
+  async claimTask() {
+    const now = Date.now();
+    const t = this.tasks.find((x) => x.status === "pendiente" && (!x.lockedUntil || Number(x.lockedUntil) < now));
+    if (!t) return null;
+    t.status = "en_curso"; t.lockedUntil = now + 15 * 60_000; t.attempts = Number(t.attempts ?? 0) + 1;
+    return { id: String(t.id), agent: String(t.agent), title: String(t.title), instructions: String(t.instructions), attempts: Number(t.attempts), maxAttempts: Number(t.maxAttempts ?? 2) };
+  }
+  async finishTask(id: string, status: string, result: Record<string, unknown>) {
+    const t = this.tasks.find((x) => x.id === id);
+    // A task that goes back to the queue waits 10 minutes before its retry.
+    if (t) Object.assign(t, { status, result, lockedUntil: status === "pendiente" ? Date.now() + 10 * 60_000 : null });
+  }
 }

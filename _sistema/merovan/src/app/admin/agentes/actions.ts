@@ -6,6 +6,7 @@ import { audit, requireRole } from "@/lib/admin";
 import { agentByKey } from "@/lib/agents/agents";
 import { decide } from "@/lib/agents/pipeline";
 import { ACTION_TYPES } from "@/lib/agents/policy";
+import { runPendingTasks } from "@/lib/agents/queue";
 import { runAgent } from "@/lib/agents/runtime";
 import { modelFor, storeFor } from "@/lib/agents/server";
 import { parseEuros } from "@/lib/format";
@@ -162,4 +163,12 @@ export async function deleteDemoResearch() {
   await supabase.from("scripts").delete().eq("ejemplo", true);
   await audit("borrar_datos_ejemplo", "niches", null, { proposals: proposalIds.length });
   back("/admin/agentes/investigacion", "ok", "Datos de ejemplo borrados");
+}
+
+export async function processTasks() {
+  const staff = await requireRole("owner", "producto");
+  const store = await storeFor(staff.id);
+  const done = await runPendingTasks(store, modelFor, 5);
+  await audit("procesar_tareas_agentes", "agent_tasks", null, { done });
+  back("/admin/agentes", "ok", done.length ? `Tareas procesadas: ${done.map((d) => `${d.agent} → ${d.status}`).join(" · ")}` : "No hay tareas pendientes");
 }

@@ -2,6 +2,7 @@ import "server-only";
 import type { serviceClient } from "@/lib/admin";
 import { AnthropicModel, hasApiKey } from "@/lib/agents/model";
 import { autoKillCheck } from "@/lib/agents/pipeline";
+import { runPendingTasks } from "@/lib/agents/queue";
 import { runAgent } from "@/lib/agents/runtime";
 import { SupabaseStore } from "@/lib/agents/supabase-store";
 import { runDecisionEngine } from "@/lib/decisions";
@@ -40,6 +41,7 @@ export async function dailyRoutine(supabase: Supabase, trigger: "manual" | "cron
       const r = await runAgent(store, new AnthropicModel(), "orquestador", "Ciclo diario: revisa el estado, delega lo necesario y resume el día para Jaska.");
       return { estado: r.status, coste_microusd: r.costMicroUsd, resumen: r.summary.slice(0, 1000) };
     });
+    results.tareas = await runJob(supabase, "tareas_agentes", trigger, async () => ({ tareas: await runPendingTasks(store, () => new AnthropicModel(), 8) }));
   }
   if (retentionClient) {
     results.retencion = await runJob(retentionClient, "retencion_datos", trigger, async () => {

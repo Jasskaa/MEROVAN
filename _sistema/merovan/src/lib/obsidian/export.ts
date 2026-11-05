@@ -234,6 +234,48 @@ export async function exportToVault(supabase: Supabase, today = new Date().toISO
     write(root, cfgRel, cfg.text, cfgExisting, r);
   }
 
+  // ---------- AI agents: last 7 days and what they learnt ----------
+  const weekAgo = new Date(Date.parse(today) - 7 * 864e5).toISOString();
+  const [{ data: state }, { data: runs }, { data: proposals }, { data: memory }] = await Promise.all([
+    supabase.from("system_state").select("kill_switch, kill_reason, dry_run").maybeSingle(),
+    supabase.from("agent_runs").select("agent, status, cost_microusd, summary, started_at").gte("started_at", weekAgo).order("started_at", { ascending: false }).limit(40),
+    supabase.from("agent_proposals").select("title, agent, status, decision, created_at").gte("created_at", weekAgo).order("created_at", { ascending: false }).limit(40),
+    supabase.from("agent_memory").select("scope, key, content, agent, created_at").order("scope").order("created_at", { ascending: false }).limit(200),
+  ]);
+  if (state) {
+    const usd = (m: number) => `${(m / 1_000_000).toFixed(2).replace(".", ",")} $`;
+    const oneLine = (t: string | null) => (t ?? "").replace(/\s+/g, " ").replace(/\|/g, "/").slice(0, 160);
+    const agentsRel = "00-INICIO/Agentes de IA.md";
+    const agentsExisting = read(root, agentsRel);
+    const agentsAuto = [
+      `_Generado por la app el ${today}. Últimos 7 días._`, "",
+      mdTable(["Indicador", "Valor"], [
+        ["Parada global", state.kill_switch ? `ACTIVA (${state.kill_reason ?? ""})` : "no"],
+        ["Modo simulación", state.dry_run ? "sí (nada externo es real)" : "no: acciones reales"],
+        ["Ejecuciones", runs?.length ?? 0], ["Con error", (runs ?? []).filter((x) => x.status === "error").length],
+        ["Coste de IA", usd((runs ?? []).reduce((s, x) => s + Number(x.cost_microusd), 0))],
+        ["Propuestas pendientes", (proposals ?? []).filter((x) => x.status === "pendiente").length],
+      ]),
+      "", "### Ejecuciones",
+      mdTable(["Fecha", "Agente", "Estado", "Resumen"], (runs ?? []).map((x) => [x.started_at.slice(0, 16).replace("T", " "), x.agent, x.status, oneLine(x.summary)])),
+      "", "### Propuestas",
+      mdTable(["Fecha", "Agente", "Propuesta", "Decisión", "Estado"], (proposals ?? []).map((x) => [x.created_at.slice(0, 10), x.agent, oneLine(x.title), x.decision, x.status])),
+    ].join("\n");
+    const ag = updateNote(agentsExisting, { tipo: "indice", id: "INI-AGENTES", estado: "activo", responsable: "owner", tags: ["inicio"] }, agentsAuto, today,
+      "\n# Agentes de IA\n\nEn una frase: qué han hecho los agentes esta semana y qué espera tu aprobación (se aprueba en el panel, no aquí).\n\nVer también [[Aprendizajes de los agentes]].\n\n## Comentarios\n");
+    write(root, agentsRel, ag.text, agentsExisting, r);
+
+    const learnRel = "01-ESTRATEGIA/Aprendizajes de los agentes.md";
+    const learnExisting = read(root, learnRel);
+    const scopes = [...new Set((memory ?? []).map((m) => m.scope))];
+    const learnAuto = scopes.length
+      ? scopes.flatMap((sc) => [`### ${sc}`, ...(memory ?? []).filter((m) => m.scope === sc).map((m) => `- **${m.key}** (${m.agent ?? "—"}, ${m.created_at.slice(0, 10)}): ${oneLine(m.content)}`), ""]).join("\n")
+      : "_Aún no hay aprendizajes guardados._";
+    const learn = updateNote(learnExisting, { tipo: "indice", id: "EST-APRENDIZAJES", estado: "activo", responsable: "owner", tags: [] }, learnAuto, today,
+      "\n# Aprendizajes de los agentes\n\nEn una frase: lo que los agentes han aprendido (ganchos, nichos, proveedores) para no repetir errores. Volver a [[Agentes de IA]].\n\n## Notas del equipo\n");
+    write(root, learnRel, learn.text, learnExisting, r);
+  }
+
   // ---------- Index zones (so new notes are never orphans) ----------
   const productNotes = notesById(root, "02-PRODUCTOS");
   updateIndexZone(root, "02-PRODUCTOS/_Índice.md",
