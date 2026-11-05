@@ -2,6 +2,10 @@ import "server-only";
 import { loadSettings, marginDefaults, type serviceClient } from "@/lib/admin";
 import type { createClient } from "@/lib/supabase/server";
 import type { Guardrails, Usage } from "./policy";
+import { runDecisionEngine } from "@/lib/decisions";
+import { DEFAULT_RULES, type DecisionRules } from "@/lib/domain/decision";
+import { computeMargin } from "@/lib/domain/margin";
+import type { AdRow } from "./ads";
 import type { MarginDefaults } from "./research";
 import type { AgentStore, CalendarEntry, CandidateRow, CreativeView, ScriptInput, NewCandidate, NicheInput, ProductSummary, ProposalRow, ResearchNiche, SupplierOfferView } from "./store";
 
@@ -249,4 +253,43 @@ export class SupabaseStore implements AgentStore {
   async linkCalendarProposal(id: string, proposalId: string) {
     await this.db.from("content_calendar").update({ proposal_id: proposalId }).eq("id", id);
   }
+
+  async adRows(days: number): Promise<AdRow[]> {
+    const from = isoDay(Date.now() - days * DAY);
+    const [{ data: rows }, { data: products }, { data: campaigns }, guardrails, settings] = await Promise.all([
+      this.db.from("ad_metrics_daily").select("platform, campaign_name, ad_name, product_id, impressions, clicks, spend_cents, purchases, revenue_cents").gte("day", from),
+      this.db.from("products").select("id, code, price_cents, vat_rate, supplier_offers(role, unit_cost_cents, shipping_cents)"),
+      this.db.from("campaigns").select("name, test_cap_cents"),
+      this.getGuardrails(),
+      loadSettings(this.db),
+    ]);
+    const defaults = marginDefaults(settings);
+    const byProduct = new Map((products ?? []).map((p) => {
+      const offer = (p.supplier_offers ?? []).find((o: { role: string }) => o.role === "principal") as { unit_cost_cents: number; shipping_cents: number } | undefined;
+      const m = p.price_cents && offer
+        ? computeMargin({ ...defaults, priceWithVat: p.price_cents / 100, vatRate: Number(p.vat_rate), productCost: offer.unit_cost_cents / 100, shippingCost: offer.shipping_cents / 100 })
+        : null;
+      return [p.id as string, { code: p.code as string, beCpa: m ? Math.round(m.breakEvenCpa * 100) : null }];
+    }));
+    const caps = new Map((campaigns ?? []).filter((c) => c.test_cap_cents != null).map((c) => [c.name as string, c.test_cap_cents as number]));
+    const productCap = guardrails.ads_product_max || null;
+    const ads = new Map<string, AdRow>();
+    for (const r of rows ?? []) {
+      const k = `${r.platform}|${r.campaign_name}|${r.ad_name}`;
+      const prod = r.product_id ? byProduct.get(r.product_id) : undefined;
+      const a = ads.get(k) ?? {
+        platform: r.platform, campaign: r.campaign_name, ad: r.ad_name, product: prod?.code ?? null,
+        impressions: 0, clicks: 0, spend_cents: 0, purchases: 0, revenue_cents: 0,
+        test_cap_cents: caps.get(r.campaign_name) ?? productCap, break_even_cpa_cents: prod?.beCpa ?? null,
+      };
+      a.impressions += r.impressions; a.clicks += r.clicks; a.spend_cents += r.spend_cents; a.purchases += r.purchases; a.revenue_cents += r.revenue_cents;
+      ads.set(k, a);
+    }
+    return [...ads.values()];
+  }
+  async decisionRules(): Promise<DecisionRules> {
+    const s = await loadSettings(this.db);
+    return { ...DEFAULT_RULES, ...((s.decision_rules as Partial<DecisionRules>) ?? {}) };
+  }
+  async runDecisions() { return runDecisionEngine(this.db); }
 }

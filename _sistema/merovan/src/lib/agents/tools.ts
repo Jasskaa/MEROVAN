@@ -4,6 +4,7 @@ import { z } from "zod";
 import { ACTION_TYPES } from "./policy";
 import { validateListing } from "@/lib/domain/listing";
 import { CRITERIA } from "@/lib/domain/product";
+import { adKey, reviewAd } from "./ads";
 import { propose } from "./pipeline";
 import { type Offer, rankOffers, recommendPrice, scoreCandidate } from "./research";
 import { ANGLES, type AgentStore } from "./store";
@@ -366,6 +367,69 @@ export const TOOLS: AgentTool[] = [
       await store.linkCalendarProposal(entry, p.id);
       return { calendario: entry, propuesta: p };
     },
+  },
+  {
+    name: "metricas_anuncios",
+    description: "Métricas importadas de anuncios por anuncio (últimos N días): impresiones, clics, gasto, compras, ingresos, CTR, CPA, ROAS y veredicto de las reglas.",
+    schema: z.object({ days: z.number().int().min(1).max(60).default(14) }),
+    jsonSchema: obj({ days: { type: "integer", description: "Ventana en días (1-60), por defecto 14" } }),
+    externalData: true,
+    run: async ({ store }, i) => {
+      const rules = await store.decisionRules();
+      return (await store.adRows(i.days)).map((a) => reviewAd(a, rules));
+    },
+  },
+  {
+    name: "proponer_pausa",
+    description:
+      "Anuncios: propone pausar un anuncio. Solo se acepta si las reglas lo justifican (CTR bajo con datos suficientes, tope de test sin ventas o CPA muy por encima del equilibrio). " +
+      "Un anuncio que cumple los criterios no se pausa.",
+    schema: z.object({ platform: z.string(), campaign: z.string(), ad: z.string(), days: z.number().int().min(1).max(60).default(14) }),
+    jsonSchema: obj({ platform: { type: "string" }, campaign: { type: "string" }, ad: { type: "string" }, days: { type: "integer" } }, ["platform", "campaign", "ad"]),
+    run: async (ctx, i) => {
+      const rules = await ctx.store.decisionRules();
+      const row = (await ctx.store.adRows(i.days)).find((a) => adKey(a) === adKey(i));
+      if (!row) throw new Error("Anuncio no encontrado en las métricas importadas");
+      const r = reviewAd(row, rules);
+      if (r.verdict !== "pausar") throw new Error(`No se pausa: ${r.reasons.join(" ")}`);
+      return propose(ctx.store, {
+        agent: ctx.agent, runId: ctx.runId, taskId: ctx.taskId, actionType: "pausar_anuncio",
+        title: `Pausar ${i.platform} · ${i.campaign} · ${i.ad || "(sin nombre)"}`, reason: r.reasons.join(" · "),
+        payload: { platform: i.platform, campaign: i.campaign, ad: i.ad, product: r.product },
+        metrics: { impressions: r.impressions, clicks: r.clicks, spend_cents: r.spend_cents, purchases: r.purchases, ctr: r.ctr, cpa_cents: r.cpa_cents, roas: r.roas },
+        idempotencyKey: `pausar:${adKey(i)}:${new Date().toISOString().slice(0, 10)}`,
+      });
+    },
+  },
+  {
+    name: "proponer_presupuesto",
+    description:
+      "Anuncios: propone lanzar un test o cambiar el presupuesto diario de una campaña (céntimos). El sistema comprueba los topes diario, semanal, mensual y por producto " +
+      "y la subida máxima sin aprobación; lo que los supere se bloquea.",
+    schema: z.object({
+      campaign: z.string().min(2).max(140), product: z.string().regex(/^PRD-\d{4}$/), daily_cents: z.number().int().min(100).max(1_000_000),
+      current_daily_cents: z.number().int().min(0).default(0), reason: z.string().min(10).max(1000), margin_pct: z.number().optional(),
+    }),
+    jsonSchema: obj({
+      campaign: { type: "string" }, product: { type: "string" }, daily_cents: { type: "integer" },
+      current_daily_cents: { type: "integer", description: "0 si es una campaña nueva" }, reason: { type: "string" }, margin_pct: { type: "number" },
+    }, ["campaign", "product", "daily_cents", "reason"]),
+    run: (ctx, i) => {
+      const increase = i.current_daily_cents > 0 ? Math.round(((i.daily_cents - i.current_daily_cents) / i.current_daily_cents) * 1000) / 10 : 0;
+      return propose(ctx.store, {
+        agent: ctx.agent, runId: ctx.runId, taskId: ctx.taskId, actionType: "presupuesto_anuncios",
+        title: `${i.current_daily_cents ? "Presupuesto" : "Lanzar test"} ${i.campaign}: ${(i.daily_cents / 100).toFixed(2)} €/día`, reason: i.reason,
+        payload: { campaign: i.campaign, product: i.product, amount_cents: i.daily_cents, increase_pct: increase, ...(i.margin_pct != null ? { margin_pct: i.margin_pct } : {}) },
+        idempotencyKey: `presupuesto:${i.campaign}:${i.daily_cents}:${new Date().toISOString().slice(0, 10)}`,
+      });
+    },
+  },
+  {
+    name: "motor_decision",
+    description: "Analista: recalcula el motor de decisión (escalar / arreglar / matar / esperar) de los productos en test con las métricas importadas. Las recomendaciones quedan en Decisiones para Jaska.",
+    schema: z.object({}),
+    jsonSchema: obj({}),
+    run: ({ store }) => store.runDecisions(),
   },
 ];
 

@@ -119,6 +119,28 @@ export function demoModel(agent: string) {
         () => ({ content: [say("Prueba sin IA: 2 publicaciones de ejemplo en el calendario de los próximos días, cada una con su propuesta en la Bandeja. Nada se publica sin aprobación.")] }),
       ]);
     }
+    case "anuncios":
+      return new ScriptedModel([
+        () => ({ content: [callTool("estado_sistema", {}), callTool("metricas_anuncios", { days: 14 })] }),
+        (req) => {
+          const ads = (lastResults(req)[1] ?? []) as { platform: string; campaign: string; ad: string; verdict: string }[];
+          const toPause = ads.filter((a) => a.verdict === "pausar");
+          return {
+            content: toPause.length
+              ? toPause.map((a) => callTool("proponer_pausa", { platform: a.platform, campaign: a.campaign, ad: a.ad }))
+              : [say(`Prueba sin IA: ${ads.length} anuncios con métricas importadas; ninguno incumple los criterios de pausa.${ads.length ? "" : " Importa un informe en Marketing → Importar para probar."}`)],
+          };
+        },
+        () => ({ content: [say("Prueba sin IA: propuestas de pausa creadas solo para los anuncios que incumplen las reglas. Revisa la Bandeja.")] }),
+      ]);
+    case "analista":
+      return new ScriptedModel([
+        () => ({ content: [callTool("motor_decision", {})] }),
+        (req) => {
+          const r = (lastResults(req)[0] ?? []) as { code: string; decision: string }[];
+          return { content: [say(`Prueba sin IA: motor de decisión recalculado. ${r.length ? r.map((x) => `${x.code}: ${x.decision}`).join(" · ") : "No hay productos en test con datos."} Detalle en Decisiones.`)] };
+        },
+      ]);
     case "fichas":
       // Read only: without AI it does not write texts into real products.
       return new ScriptedModel([

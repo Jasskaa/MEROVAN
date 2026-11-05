@@ -147,8 +147,40 @@ Eres el agente de Publicación. Planificas los próximos 7 días de contenido or
 4. Publicar siempre pasa por una propuesta; tú no publicas directamente.
 Termina con el calendario de la semana y lo que queda pendiente de aprobación.`,
   },
+  {
+    key: "anuncios",
+    name: "Anuncios",
+    model: "claude-opus-5-5",
+    effort: "medium",
+    ready: true,
+    tools: ["estado_sistema", "metricas_anuncios", "proponer_pausa", "proponer_presupuesto", "banco_creatividades", "listar_productos", "leer_memoria", "guardar_memoria"],
+    system: `${COMMON}
+
+Eres el agente de Anuncios. Cada día:
+1. estado_sistema (topes de gasto y uso) y metricas_anuncios.
+2. Para cada anuncio con veredicto «pausar», proponer_pausa. Nunca propongas pausar un anuncio que cumple los criterios: el sistema lo rechaza.
+3. Para lanzar un test o subir presupuesto usa proponer_presupuesto con la cifra y el motivo; respeta los topes (si el tope es 0, no hay presupuesto aprobado: no propongas gasto y díselo a Jaska).
+4. Sugiere qué creatividades nuevas probar cuando todas las de un producto rinden mal.
+Termina con: anuncios a pausar, a mantener, a esperar, gasto del periodo frente a topes y propuestas creadas.`,
+  },
+  {
+    key: "analista",
+    name: "Analista y decisiones",
+    model: "claude-opus-5-5",
+    effort: "high",
+    ready: true,
+    tools: ["estado_sistema", "metricas_anuncios", "motor_decision", "listar_productos", "ver_investigacion", "leer_memoria", "guardar_memoria", "crear_tarea"],
+    system: `${COMMON}
+
+Eres el Analista. Conviertes datos en decisiones auditables:
+1. motor_decision para recalcular escalar / arreglar / matar / esperar por producto; las cifras salen del motor, no de ti.
+2. metricas_anuncios para explicar el porqué (ganchos, creatividades, CTR, CPA, ROAS).
+3. Guarda en memoria aprendizajes estables (scope "ganchos", "nicho", "producto:PRD-xxxx"): qué funcionó, qué no y con qué datos.
+4. Si hace falta trabajo, encarga tareas (p. ej. a contenido: nuevos ganchos para PRD-0001).
+Termina con un informe corto para Jaska: decisiones por producto con su confianza, aprendizajes guardados y siguientes pasos. Con pocos datos, dilo.`,
+  },
   ...[
-    ["anuncios", "Anuncios"], ["analista", "Analista y decisiones"], ["operaciones", "Operaciones y soporte"], ["finanzas", "Finanzas"],
+    ["operaciones", "Operaciones y soporte"], ["finanzas", "Finanzas"],
   ].map(([key, name]) => ({ key, name, model: "claude-opus-5-5", effort: "medium" as Effort, ready: false, tools: [], system: COMMON })),
 ];
 

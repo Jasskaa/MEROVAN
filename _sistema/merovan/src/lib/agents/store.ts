@@ -2,6 +2,8 @@
 // same code runs against Supabase (production) and an in-memory store (tests and evaluations).
 import type { Guardrails, Usage } from "./policy";
 import type { ListingInput } from "@/lib/domain/listing";
+import type { DecisionRules } from "@/lib/domain/decision";
+import type { AdRow } from "./ads";
 import type { MarginDefaults } from "./research";
 
 export interface ProposalRow {
@@ -86,6 +88,10 @@ export interface AgentStore {
   schedule(i: { day: string; platform: string; title: string; caption: string; creativeCode: string; ejemplo: boolean }): Promise<string>;
   listCalendar(fromDay: string): Promise<CalendarEntry[]>;
   linkCalendarProposal(id: string, proposalId: string): Promise<void>;
+
+  adRows(days: number): Promise<AdRow[]>;
+  decisionRules(): Promise<DecisionRules>;
+  runDecisions(): Promise<{ code: string; decision: string }[]>;
 }
 
 export const DEFAULT_MARGIN: MarginDefaults = {
@@ -113,6 +119,8 @@ export class MemoryStore implements AgentStore {
   scripts: (ScriptInput & { code: string })[] = [];
   creatives: (CreativeView & { ejemplo: boolean })[] = [];
   calendar: (CalendarEntry & { ejemplo: boolean })[] = [];
+  ads: AdRow[] = [];
+  decisions: { code: string; decision: string }[] = [];
   refunds = 0;
   private seq = 0;
   private id = (p: string) => `${p}-${++this.seq}`;
@@ -238,4 +246,8 @@ export class MemoryStore implements AgentStore {
   }
   async listCalendar(fromDay: string) { return this.calendar.filter((c) => c.day >= fromDay); }
   async linkCalendarProposal(id: string, proposalId: string) { const c = this.calendar.find((x) => x.id === id); if (c) c.proposal_id = proposalId; }
+
+  async adRows() { return this.ads.map((a) => ({ ...a })); }
+  async decisionRules() { const { DEFAULT_RULES } = await import("@/lib/domain/decision"); return { ...DEFAULT_RULES }; }
+  async runDecisions() { return [...this.decisions]; }
 }
