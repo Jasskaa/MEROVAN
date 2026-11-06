@@ -28,11 +28,16 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   const items = o.order_items ?? [];
   const costEstimate = items.reduce((s: number, i: { unit_cost_cents: number | null; quantity: number }) => s + (i.unit_cost_cents ?? 0) * i.quantity, 0);
   const canEdit = staff.role === "owner" || staff.role === "operaciones";
-  const daysSincePaid = o.paid_at ? Math.floor((Date.now() - new Date(o.paid_at).getTime()) / 864e5) : null;
+  // Delivery address saved from Stripe (orders before 06/11/2026 have none).
+  const address = o.ship_line1
+    ? [o.ship_name ?? o.customer_name, o.ship_line1, o.ship_line2, [o.ship_postal_code, o.ship_city].filter(Boolean).join(" "), o.ship_state, o.shipping_country, o.ship_phone && `tel. ${o.ship_phone}`]
+        .filter(Boolean).join(" · ")
+    : null;
+  const daysSincePaid =o.paid_at ? Math.floor((Date.now() - new Date(o.paid_at).getTime()) / 864e5) : null;
   const supplierText = [
     `Pedido MEROVAN #${o.number}`,
     ...items.map((i: { quantity: number; product_variants: { sku: string } | null; products: { name: string } }) => `${i.quantity} × ${i.product_variants?.sku ?? ""} ${i.products.name}`),
-    `Enviar a: ${o.customer_name ?? "[nombre]"} · [dirección completa del cliente desde Stripe/TikTok] · ${o.shipping_country}`,
+    `Enviar a: ${address ?? `${o.customer_name ?? "[nombre]"} · [dirección no guardada: consúltala en Stripe/TikTok] · ${o.shipping_country}`}`,
   ].join("\n");
 
   return (
@@ -68,7 +73,10 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
             <div><dt className="text-xs text-muted">Comisión pago (est.)</dt><dd className="tabular-nums">{eur(o.payment_fee_cents)}</dd></div>
             <div><dt className="text-xs text-muted">Cliente</dt><dd>{o.customer_name ?? "—"} · {o.customer_email ?? "—"}</dd></div>
           </dl>
-          <p className="mt-2 text-xs text-muted">La dirección completa se consulta en Stripe o TikTok Shop: aquí solo se guardan los datos mínimos.</p>
+          <div className="mt-3 text-sm">
+            <p className="text-xs text-muted">Dirección de envío</p>
+            <p>{address ?? "No guardada (pedido anterior o sin dirección): consúltala en Stripe o TikTok Shop."}</p>
+          </div>
         </Card>
 
         <Card title="Pedido al proveedor">

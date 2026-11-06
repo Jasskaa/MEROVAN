@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Monogram } from "@/components/store/logo";
+import { type OrderStatus, orderView } from "@/lib/domain/checkout";
 import { eur } from "@/lib/format";
 import { confirmReturnedSession } from "@/lib/payments";
+import { stripe } from "@/lib/store";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Tu pedido" };
@@ -21,16 +23,18 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
     ({ data: lines } = await supabase.rpc("order_lines", { p_order: id }));
   }
   const o = lines[0];
-  const paid = o.status !== "pendiente_pago";
+  // Only the database status counts; ?pagado=1 just means the buyer came back from Stripe.
+  const view = orderView(o.status as OrderStatus, { returningFromPayment: pagado === "1", paymentsEnabled: stripe() !== null });
 
   return (
     <main className="mx-auto max-w-xl px-4 py-16 text-center sm:py-24">
       <Monogram size={64} id="mv-order" className="mx-auto" />
       <p className="mt-6 text-[11px] uppercase tracking-[0.28em] text-brass">Pedido nº {o.number}</p>
-      <h1 className="mt-3 font-display text-5xl uppercase sm:text-6xl">{paid || pagado ? "Gracias por tu compra" : "Pedido pendiente de pago"}</h1>
-      {paid && <p className="mt-4 leading-relaxed text-stone">Te hemos enviado la confirmación por correo. Te avisaremos con el número de seguimiento en cuanto salga del almacén.</p>}
-      {pagado && !paid && <p className="mt-4 text-sm text-stone">Estamos confirmando el pago; recarga en unos segundos.</p>}
-      {!paid && !pagado && <p className="mt-4 text-sm text-stone">Los pagos online aún no están activados en esta tienda.</p>}
+      <h1 className="mt-3 font-display text-5xl uppercase sm:text-6xl">{view.title}</h1>
+      <p className="mt-4 leading-relaxed text-stone">{view.message}</p>
+      {view.showRetry && (
+        <Link href="/carrito" className="mt-6 inline-block rounded-full border border-ink px-7 py-3 text-sm uppercase tracking-[0.18em]">Volver al carrito para pagar</Link>
+      )}
       <ul className="mt-10 divide-y divide-line border-y border-line text-left text-sm">
         {lines.map((l: { product_name: string; variant_title: string | null; quantity: number; unit_price_cents: number }, i: number) => (
           <li key={i} className="flex justify-between py-4">

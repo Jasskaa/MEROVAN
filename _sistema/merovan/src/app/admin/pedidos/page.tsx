@@ -21,7 +21,11 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
     .order("number", { ascending: false }).limit(200);
   q = estado ? q.eq("status", estado) : q.neq("status", "pendiente_pago");
   if (canal) q = q.eq("channel", canal);
-  const [{ data: orders }, settings] = await Promise.all([q, loadSettings()]);
+  const [{ data: orders }, settings, { data: paymentIssues }] = await Promise.all([
+    q, loadSettings(),
+    supabase.from("payment_events").select("id, outcome, event_ref, amount_cents, created_at, orders(number)")
+      .is("resolved_at", null).order("created_at", { ascending: false }).limit(50),
+  ]);
   const trackingDays = Number(settings.tracking_alert_days ?? 5);
   const today = new Date().toISOString().slice(0, 10);
 
@@ -49,6 +53,23 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
         <p className="text-sm text-muted">{orders?.length ?? 0} pedidos{late.length ? ` · ${late.length} con aviso` : ""}</p>
       </header>
       <Toast ok={ok} error={error} />
+
+      {!!paymentIssues?.length && (
+        <Card title={`Pagos por revisar (${paymentIssues.length})`}>
+          <p className="mb-2 text-sm text-muted">Cobros que Stripe confirmó pero no se han podido aplicar a un pedido. Revísalos en Stripe y, si toca, reembolsa.</p>
+          <Table head={["Fecha", "Motivo", "Pedido", "Importe", "Sesión de Stripe"]}>
+            {paymentIssues.map((e) => (
+              <tr key={e.id}>
+                <td>{date(e.created_at)}</td>
+                <td><Badge tone="danger">{e.outcome.replaceAll("_", " ")}</Badge></td>
+                <td>{(e.orders as unknown as { number: number } | null)?.number ?? "—"}</td>
+                <td className="tabular-nums">{e.amount_cents != null ? eur(e.amount_cents) : "—"}</td>
+                <td className="font-mono text-xs">{e.event_ref ?? "—"}</td>
+              </tr>
+            ))}
+          </Table>
+        </Card>
+      )}
 
       <nav className="flex flex-wrap gap-1 text-sm">
         <a href={filter("estado")} className={`rounded-md border px-3 py-1 ${!estado ? "border-gold text-gold" : "border-border"}`}>Todos</a>

@@ -44,6 +44,11 @@ export async function dailyRoutine(supabase: Supabase, trigger: "manual" | "cron
     results.tareas = await runJob(supabase, "tareas_agentes", trigger, async () => ({ tareas: await runPendingTasks(store, () => new AnthropicModel(), 8) }));
   }
   if (retentionClient) {
+    results.reservas = await runJob(retentionClient, "liberar_reservas", trigger, async () => {
+      const { data, error } = await retentionClient.rpc("release_expired_reservations");
+      if (error) throw new Error(error.message);
+      return { liberadas: data as number };
+    });
     results.retencion = await runJob(retentionClient, "retencion_datos", trigger, async () => {
       const { data, error } = await retentionClient.rpc("apply_retention");
       if (error) throw new Error(error.message);

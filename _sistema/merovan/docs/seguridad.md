@@ -39,7 +39,8 @@
 | A12 | Auditoría: cada ejecución, herramienta, propuesta y decisión registradas | ✅ | `agent_runs`, `agent_actions`, `audit_log` |
 
 ## Avisos del asesor de Supabase aceptados
-- *SECURITY DEFINER ejecutable por anon*: `track_view`, `cart_set`, `cart_contents`, `checkout_create_order`, `order_lines`, `owner_exists`.
+- *SECURITY DEFINER ejecutable por anon*: `track_view`, `cart_set`, `cart_contents`, `checkout_create_order`, `checkout_prepare`, `order_lines`, `owner_exists`.
+  `checkout_prepare` (06/11/2026) reserva stock: limitada por carrito, caducidad de 35 min y tope global `checkout_max_active_reservations`.
   Son intencionados: es la API pública de la tienda. Validan la sesión, solo tocan productos publicados y toman los precios de la BD.
 - *Varias políticas permisivas* (rendimiento): las tablas tienen una política de lectura y otra de escritura por rol; con el volumen
   previsto no tiene impacto. Revisar si alguna tabla supera ~1 M de filas.

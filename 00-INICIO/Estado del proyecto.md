@@ -28,6 +28,11 @@ generada con IA (1200×1200) y **stock 0** (nadie puede comprarlos). Ver [[Inves
 `gpsr_manufacturer/address/contact/warnings = null`, borrar sus filas de `product_media` y sus archivos en el bucket
 `product-media`, stock 0, precios y textos sin cambios. Los proveedores PRV-0003 (Relaxdays) y PRV-0004 (Inodorina) se quedan.
 
+## Revisión del pago (06/11/2026)
+Corregidos **en local** los 4 fallos de [[REVISION-MEROVAN-PARA-CLAUDE]] (reintento de pago, última unidad,
+dirección de envío y mensajes del pedido) con la migración 17 y 26 pruebas nuevas. **Sin aplicar en Supabase ni
+desplegar**: pendiente de confirmación de Jaska y de Stripe en modo prueba para la compra de extremo a extremo.
+
 ## Hecho
 - **Bóveda de Obsidian** con convenciones, índices, plantillas, roadmap y exportador automático desde la app.
 - **Tienda propia** (catálogo, ficha, carrito, pago con Stripe Checkout, páginas legales provisionales) y **panel** de administración
