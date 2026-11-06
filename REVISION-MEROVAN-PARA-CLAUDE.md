@@ -315,4 +315,9 @@ Re-ejecución final (06/11/2026, 21:56): `npm test -- --hookTimeout=60000` → *
 
 ### Despliegue
 
-Pendiente de anotar tras el push.
+- Commit `3633e4d` subido a `main` el 06/11/2026. Vercel lo desplegó en producción (`dpl_6hnsPmaw9b7J5CLYbGtkL3apEdug`, estado READY).
+- Comprobación rápida en https://merovan.vercel.app:
+  - `/`, `/carrito` y `/login` responden 200;
+  - un pedido inexistente da 404;
+  - el webhook responde 503 «Pagos no configurados», lo esperado porque Stripe aún no está configurado.
+- **Sin probar en producción:** el pago completo, porque no hay Stripe de pruebas ni productos con stock. Siguen pendientes los pasos 4 a 6.
